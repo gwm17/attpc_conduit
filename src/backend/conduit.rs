@@ -124,7 +124,7 @@ impl Conduit {
         let cloud = PointCloud::new(cloud_buffer);
         match self.cloud_sender.send(cloud) {
             Ok(_) => (),
-            Err(e) => tracing::error!("Could not send a point cloud!"),
+            Err(_) => tracing::error!("Could not send a point cloud!"),
         }
     }
 }

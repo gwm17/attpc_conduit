@@ -34,7 +34,7 @@ impl EventCache {
         let frame_evt_id = frame.header.event_id;
         match self.events.get_mut(&frame_evt_id) {
             Some(event) => {
-                event.append_frame(pad_map, frame);
+                event.append_frame(pad_map, frame)?;
                 let mut event_position = 0;
                 for (idx, event_id) in self.order.iter().enumerate() {
                     if *event_id == frame_evt_id {
@@ -77,6 +77,7 @@ impl EventCache {
 /// # EventBuilder
 /// EventBuilder takes GrawFrames and composes them into Events.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct EventBuilder {
     current_event_id: u32,
     pad_map: PadMap,
@@ -121,7 +122,7 @@ impl EventBuilder {
             None => return Err(EventBuilderError::ClosedChannel),
         };
 
-        self.event_cache.add_frame(&self.pad_map, new_frame);
+        self.event_cache.add_frame(&self.pad_map, new_frame)?;
 
         if self.event_cache.size() > MAX_FRAME_CACHE {
             match self

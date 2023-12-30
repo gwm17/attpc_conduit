@@ -99,7 +99,6 @@ impl Error for GrawFrameError {}
 pub enum ECCReceiverError {
     BadFrame(GrawFrameError),
     AddressParseError,
-    EndOfStream,
     IOError(std::io::Error),
     Timeout(tokio::time::error::Elapsed),
 }
@@ -117,7 +116,7 @@ impl From<std::io::Error> for ECCReceiverError {
 }
 
 impl From<std::net::AddrParseError> for ECCReceiverError {
-    fn from(value: std::net::AddrParseError) -> Self {
+    fn from(_: std::net::AddrParseError) -> Self {
         Self::AddressParseError
     }
 }
@@ -135,7 +134,6 @@ impl Display for ECCReceiverError {
                 write!(f, "Bad frame found when reading GrawFile! Error: {}", frame)
             }
             Self::AddressParseError => write!(f, "Bad IP address and socket at ECCReciever"),
-            Self::EndOfStream => write!(f, "ECCReciever ended"),
             Self::IOError(e) => write!(f, "GrawFile recieved an io error: {}!", e),
             Self::Timeout(e) => write!(f, "Attepmt to connect ECCReceiver timed out! {}", e),
         }
@@ -206,7 +204,6 @@ impl Error for EventError {}
 
 #[derive(Debug)]
 pub enum EventBuilderError {
-    EventOutOfOrder(u32, u32),
     EventError(EventError),
     BrokenCache,
     ClosedChannel,
@@ -221,10 +218,12 @@ impl From<EventError> for EventBuilderError {
 impl Display for EventBuilderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::EventOutOfOrder(frame, event) => write!(f, "The event builder recieved a frame that is out of order -- frame event id: {} event builder event id: {}", frame, event),
             Self::EventError(val) => write!(f, "The EventBuilder recieved an event error: {}", val),
-            Self::BrokenCache => write!(f, "The EventBuilder event cache was broken (mismatched order/cache)!"),
-            Self::ClosedChannel => write!(f, "The EventBuilder had a closed channel!")
+            Self::BrokenCache => write!(
+                f,
+                "The EventBuilder event cache was broken (mismatched order/cache)!"
+            ),
+            Self::ClosedChannel => write!(f, "The EventBuilder had a closed channel!"),
         }
     }
 }

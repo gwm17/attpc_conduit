@@ -12,10 +12,10 @@ use super::message::ConduitMessage;
 use super::point_cloud::PointCloud;
 
 const CONNECTION_TIMEOUT: Duration = Duration::from_secs(120);
-const SEND_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_CLIENTS: usize = 3;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Connection {
     socket: TcpStream,
     address: SocketAddr,
@@ -61,6 +61,7 @@ impl Connection {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Server {
     listener_port: String,
     listener_socket: TcpListener,

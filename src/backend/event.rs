@@ -49,14 +49,6 @@ impl Event {
         return data_matrix;
     }
 
-    pub fn get_header_array(&self) -> Array1<f64> {
-        numpy::ndarray::arr1(&[
-            self.event_id as f64,
-            self.timestamp as f64,
-            self.timestampother as f64,
-        ])
-    }
-
     /// Add a frame to the event. Sanity checks can return errors
     pub fn append_frame(&mut self, pad_map: &PadMap, frame: GrawFrame) -> Result<(), EventError> {
         if self.nframes == 0 {

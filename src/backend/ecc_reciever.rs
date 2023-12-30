@@ -13,6 +13,7 @@ use super::message::ConduitMessage;
 const CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ECCReceiver {
     addr: SocketAddr,
     socket: TcpStream,

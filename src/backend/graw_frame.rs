@@ -42,6 +42,7 @@ impl GrawData {
     }
 }
 
+#[allow(dead_code)]
 fn parse_bitsets(cursor: &mut Cursor<Vec<u8>>) -> Result<Vec<BitVec<u8>>, GrawFrameError> {
     let mut sets: Vec<BitVec<u8>> = Vec::with_capacity(4);
     let mut storage_index: usize;
@@ -59,6 +60,7 @@ fn parse_bitsets(cursor: &mut Cursor<Vec<u8>>) -> Result<Vec<BitVec<u8>>, GrawFr
     return Ok(sets);
 }
 
+#[allow(dead_code)]
 fn parse_multiplicity(cursor: &mut Cursor<Vec<u8>>) -> Result<Vec<u16>, GrawFrameError> {
     let mut mults: Vec<u16> = Vec::with_capacity(4);
     let mut mult: u16;
@@ -183,6 +185,7 @@ impl GrawFrameHeader {
 /// ## Note
 /// Using 256 bit sizing is interesting because it often results in padding in both the body and the header. (It is done for performance reasons in the acquisition)
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct GrawFrame {
     pub header: GrawFrameHeader,
     hit_patterns: Vec<BitVec<u8>>,
