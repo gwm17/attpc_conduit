@@ -101,6 +101,7 @@ pub enum ECCReceiverError {
     AddressParseError,
     EndOfStream,
     IOError(std::io::Error),
+    Timeout(tokio::time::error::Elapsed),
 }
 
 impl From<GrawFrameError> for ECCReceiverError {
@@ -121,6 +122,12 @@ impl From<std::net::AddrParseError> for ECCReceiverError {
     }
 }
 
+impl From<tokio::time::error::Elapsed> for ECCReceiverError {
+    fn from(value: tokio::time::error::Elapsed) -> Self {
+        Self::Timeout(value)
+    }
+}
+
 impl Display for ECCReceiverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -130,6 +137,7 @@ impl Display for ECCReceiverError {
             Self::AddressParseError => write!(f, "Bad IP address and socket at ECCReciever"),
             Self::EndOfStream => write!(f, "ECCReciever ended"),
             Self::IOError(e) => write!(f, "GrawFile recieved an io error: {}!", e),
+            Self::Timeout(e) => write!(f, "Attepmt to connect ECCReceiver timed out! {}", e),
         }
     }
 }
@@ -222,3 +230,32 @@ impl Display for EventBuilderError {
 }
 
 impl Error for EventBuilderError {}
+
+#[derive(Debug)]
+pub enum ServerError {
+    IOError(std::io::Error),
+    Timeout(tokio::time::error::Elapsed),
+}
+
+impl From<std::io::Error> for ServerError {
+    fn from(value: std::io::Error) -> Self {
+        Self::IOError(value)
+    }
+}
+
+impl From<tokio::time::error::Elapsed> for ServerError {
+    fn from(value: tokio::time::error::Elapsed) -> Self {
+        Self::Timeout(value)
+    }
+}
+
+impl Display for ServerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::IOError(e) => write!(f, "The server ran into an IO error: {e}"),
+            Self::Timeout(e) => write!(f, "The server timed out on a connection: {e}"),
+        }
+    }
+}
+
+impl Error for ServerError {}

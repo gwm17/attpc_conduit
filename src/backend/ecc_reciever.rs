@@ -3,11 +3,14 @@ use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 use tokio::sync::{broadcast, mpsc};
 use tokio::task::JoinHandle;
+use tokio::time::timeout;
 
 use super::constants::{EXPECTED_HEADER_SIZE, NUMBER_OF_COBOS, SIZE_UNIT};
 use super::error::ECCReceiverError;
 use super::graw_frame::{GrawFrame, GrawFrameHeader};
 use super::message::ConduitMessage;
+
+const CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
 #[derive(Debug)]
 pub struct ECCReceiver {
@@ -23,7 +26,7 @@ impl ECCReceiver {
         tx: mpsc::Sender<GrawFrame>,
     ) -> Result<Self, ECCReceiverError> {
         let addr: SocketAddr = format!("{ip}:{port}").parse()?;
-        let socket: TcpStream = TcpStream::connect(&addr).await?;
+        let socket: TcpStream = (timeout(CONNECTION_TIMEOUT, TcpStream::connect(&addr)).await?)?;
         return Ok(ECCReceiver {
             addr,
             socket,

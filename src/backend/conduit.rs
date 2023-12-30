@@ -1,9 +1,13 @@
+use numpy::IntoPyArray;
+use numpy::PyArray2;
 use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
+use pyo3::prelude::*;
+
+use super::constants::DEFAULT_SERVER_PORT;
 use super::constants::NUMBER_OF_COBOS;
 use super::ecc_reciever::startup_ecc_recievers;
 use super::event::Event;
@@ -11,17 +15,24 @@ use super::event_builder::startup_event_builder;
 use super::graw_frame::GrawFrame;
 use super::message::ConduitMessage;
 use super::pad_map::PadMap;
+use super::point_cloud::PointCloud;
+use super::server::startup_server;
 
+#[pyclass]
 #[derive(Debug)]
-struct Conduit {
+pub struct Conduit {
     event_receiver: Option<mpsc::Receiver<Event>>,
     cancel_sender: broadcast::Sender<ConduitMessage>,
+    cloud_sender: broadcast::Sender<PointCloud>,
     runtime: tokio::runtime::Runtime,
     handles: Option<Vec<JoinHandle<()>>>,
+    server_port: String,
 }
 
+#[pymethods]
 impl Conduit {
-    pub fn new(rt: &Arc<tokio::runtime::Runtime>) -> Self {
+    #[new]
+    pub fn new() -> Self {
         let rt = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(11)
             .enable_time()
@@ -30,12 +41,15 @@ impl Conduit {
             .expect("Could not build tokio runtime!");
 
         let (cancel_tx, _) = broadcast::channel(11);
+        let (cloud_tx, _) = broadcast::channel(10);
 
         Self {
             event_receiver: None,
             cancel_sender: cancel_tx,
+            cloud_sender: cloud_tx,
             runtime: rt,
             handles: None,
+            server_port: String::from(DEFAULT_SERVER_PORT),
         }
     }
 
@@ -65,6 +79,15 @@ impl Conduit {
             pad_map,
         );
         handles.push(evb_handle);
+
+        let server_handle = startup_server(
+            &self.runtime,
+            self.cloud_sender.clone(),
+            self.cancel_sender.clone(),
+            self.server_port.clone(),
+        );
+        handles.push(server_handle);
+
         self.handles = Some(handles);
         self.event_receiver = Some(event_rx);
     }
@@ -87,13 +110,21 @@ impl Conduit {
         }
     }
 
-    pub fn poll_events(&mut self) -> Option<Event> {
+    pub fn poll_events<'py>(&mut self, py: Python<'py>) -> Option<&'py PyArray2<i16>> {
         match self.event_receiver.as_mut() {
             Some(rx) => match rx.try_recv() {
-                Ok(event) => Some(event),
+                Ok(event) => Some(event.convert_to_data_matrix().into_pyarray(py)),
                 Err(_) => None,
             },
             None => None,
+        }
+    }
+
+    pub fn submit_point_cloud(&mut self, cloud_buffer: Vec<u8>) {
+        let cloud = PointCloud::new(cloud_buffer);
+        match self.cloud_sender.send(cloud) {
+            Ok(_) => (),
+            Err(e) => tracing::error!("Could not send a point cloud!"),
         }
     }
 }

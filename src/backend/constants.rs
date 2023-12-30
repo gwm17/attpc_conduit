@@ -19,3 +19,7 @@ pub const NUMBER_OF_MATRIX_COLUMNS: usize = NUMBER_OF_TIME_BUCKETS as usize + 5;
 
 // Algorithm constants
 pub const MAX_FRAME_CACHE: usize = 44;
+
+// Server constants
+
+pub const DEFAULT_SERVER_PORT: &str = "10986";
