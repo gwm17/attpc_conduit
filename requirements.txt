@@ -1,0 +1,4 @@
+maturin==1.4.0
+numpy==1.26.3
+scikit-learn==1.4.0
+scipy==1.12.0
