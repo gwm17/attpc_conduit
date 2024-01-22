@@ -104,6 +104,10 @@ impl Event {
         self.nframes as usize
     }
 
+    pub fn get_event_id(&self) -> u32 {
+        self.event_id
+    }
+
     /// Only for use in special cases! This will not throw errors when invalid pads are selected
     #[allow(dead_code)]
     fn get_trace_from_hardware_id(

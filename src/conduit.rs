@@ -110,10 +110,13 @@ impl Conduit {
         }
     }
 
-    pub fn poll_events<'py>(&mut self, py: Python<'py>) -> Option<&'py PyArray2<i16>> {
+    pub fn poll_events<'py>(&mut self, py: Python<'py>) -> Option<(u32, &'py PyArray2<i16>)> {
         match self.event_receiver.as_mut() {
             Some(rx) => match rx.try_recv() {
-                Ok(event) => Some(event.convert_to_data_matrix().into_pyarray(py)),
+                Ok(event) => Some((
+                    event.get_event_id(),
+                    event.convert_to_data_matrix().into_pyarray(py),
+                )),
                 Err(_) => None,
             },
             None => None,
