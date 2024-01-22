@@ -7,7 +7,7 @@ use conduit::Conduit;
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn attpc_conduit(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _attpc_conduit(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Conduit>()?;
     Ok(())
 }

@@ -171,7 +171,8 @@ class Conifg:
         path: Path
             The path to a JSON file containing a valid configuration
         """
-        with json.load(path) as config_data:
+        with open(path, "r") as config_file:
+            config_data = json.load(config_file)
             det_params = config_data["Detector"]
             self.detector.magnetic_field = det_params["magnetic_field(T)"]
             self.detector.electric_field = det_params["electric_field(V/m)"]
