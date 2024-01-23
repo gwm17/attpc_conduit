@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
+use tracing_subscriber;
 
 use pyo3::prelude::*;
 
@@ -27,12 +28,13 @@ pub struct Conduit {
     runtime: tokio::runtime::Runtime,
     handles: Option<Vec<JoinHandle<()>>>,
     server_port: String,
+    pad_path: PathBuf,
 }
 
 #[pymethods]
 impl Conduit {
     #[new]
-    pub fn new() -> Self {
+    pub fn new(pad_path: PathBuf) -> Self {
         let rt = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(11)
             .enable_time()
@@ -43,6 +45,18 @@ impl Conduit {
         let (cancel_tx, _) = broadcast::channel(11);
         let (cloud_tx, _) = broadcast::channel(10);
 
+        //Create our logging/tracing system.
+        let subscriber = tracing_subscriber::fmt()
+            .compact()
+            .with_file(true)
+            .with_line_number(true)
+            .with_thread_ids(true)
+            .with_target(false)
+            .finish();
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("Could not initialize the tracing system!");
+
+        tracing::info!("Can you hear me?");
         Self {
             event_receiver: None,
             cancel_sender: cancel_tx,
@@ -50,6 +64,7 @@ impl Conduit {
             runtime: rt,
             handles: None,
             server_port: String::from(DEFAULT_SERVER_PORT),
+            pad_path,
         }
     }
 
@@ -61,7 +76,7 @@ impl Conduit {
 
         let (frame_tx, frame_rx) = mpsc::channel::<GrawFrame>(40);
         let (event_tx, event_rx) = mpsc::channel::<Event>(40);
-        let pad_map = PadMap::new(&PathBuf::from("/some/path")).unwrap(); //Fix this later!
+        let pad_map = PadMap::new(&self.pad_path).unwrap(); //Fix this later!
 
         let mut handles = startup_ecc_recievers(&self.runtime, &frame_tx, &self.cancel_sender);
         if handles.len() < NUMBER_OF_COBOS as usize {
