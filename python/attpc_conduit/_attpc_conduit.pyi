@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 
 class Conduit:
     """This class represents the communication conduit
@@ -10,7 +11,7 @@ class Conduit:
 
     Methods
     -------
-    Conduit()
+    Conduit(pad_path: Path)
         Create a new Conduit object. There should only ever be one Conduit per pipeline.
     start_services()
         Start the Conduit, creating the communication channels and async tasks.
@@ -22,10 +23,15 @@ class Conduit:
         Submit a point cloud to the server
     """
 
-    def __init__(self):
+    def __init__(self, pad_path: Path):
         """Create a new Conduit object
 
         This initializes the async runtime (tokio) and sets up some default pathing.
+
+        Parameters
+        ----------
+        pad_path: Path
+            The path to a file containing the mapping of AT-TPC electronics to pad number on the AT-TPC pad plane
 
         Returns
         -------
