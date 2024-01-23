@@ -4,7 +4,7 @@ from pathlib import Path
 class Conduit:
     """This class represents the communication conduit
 
-    Provides a communication interface between the GET data acquisition and an analysis pipeline. The Conduit is a 
+    Provides a communication interface between the GET data acquisition and an analysis pipeline. The Conduit is a
     mulithreaded, async runtime that handles the receiving of GET data traces and merging them into into composed events.
     The events could then be polled in an analysis pipeline. Point clouds (raw data) can be emitted to a server if desired
     (Server may be removed depending on testing.)
@@ -39,7 +39,6 @@ class Conduit:
             The conduit object
         """
         ...
-
     def start_services(self):
         """Start the Conduit, creating the communication channels and async tasks.
 
@@ -48,7 +47,6 @@ class Conduit:
         almost always be run when starting your application.
         """
         ...
-
     def stop_services(self):
         """Stop the Conduit, destroying communication channels and tasks.
 
@@ -56,7 +54,6 @@ class Conduit:
         completion.
         """
         ...
-
     def poll_events(self) -> tuple[int, np.ndarray] | None:
         """Poll the Conduit, asking if any events have been recieved and merged.
 

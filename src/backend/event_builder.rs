@@ -151,7 +151,7 @@ pub fn startup_event_builder(
     rt.spawn(async move {
         match evb.run(&mut cancel_rx).await {
             Ok(()) => (),
-            Err(e) => tracing::info!("EventBuilder error: {e}"),
+            Err(e) => tracing::error!("EventBuilder error: {e}"),
         }
     })
 }

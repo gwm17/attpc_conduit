@@ -78,7 +78,8 @@ pub fn startup_ecc_recievers(
         let this_frame_tx = frame_tx.clone();
         let mut this_cancel_rx = cancel_tx.subscribe();
         let handle = rt.spawn(async move {
-            match ECCReceiver::new("127.0.0.1", "46464", this_frame_tx).await {
+            match ECCReceiver::new("127.0.0.1", "8080", this_frame_tx).await {
+                //TODO: replace these with real ip/port handlers
                 Ok(mut ecc) => match ecc.run(&mut this_cancel_rx).await {
                     Ok(()) => (),
                     Err(e) => tracing::error!("ECCReciever ran into an error: {}", e),

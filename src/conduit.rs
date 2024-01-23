@@ -74,10 +74,18 @@ impl Conduit {
             return;
         }
 
+        tracing::info!("Creating communication channels and loading pad map...");
         let (frame_tx, frame_rx) = mpsc::channel::<GrawFrame>(40);
         let (event_tx, event_rx) = mpsc::channel::<Event>(40);
-        let pad_map = PadMap::new(&self.pad_path).unwrap(); //Fix this later!
+        let pad_map = match PadMap::new(&self.pad_path) {
+            Ok(map) => map,
+            Err(e) => {
+                tracing::error!("{e}");
+                return;
+            }
+        };
 
+        tracing::info!("Starting ECC communication...");
         let mut handles = startup_ecc_recievers(&self.runtime, &frame_tx, &self.cancel_sender);
         if handles.len() < NUMBER_OF_COBOS as usize {
             tracing::warn!(
@@ -86,6 +94,7 @@ impl Conduit {
             )
         }
 
+        tracing::info!("Starting Event Builder communication...");
         let evb_handle = startup_event_builder(
             &self.runtime,
             frame_rx,
@@ -95,6 +104,7 @@ impl Conduit {
         );
         handles.push(evb_handle);
 
+        tracing::info!("Starting server communication...");
         let server_handle = startup_server(
             &self.runtime,
             self.cloud_sender.clone(),
@@ -105,6 +115,8 @@ impl Conduit {
 
         self.handles = Some(handles);
         self.event_receiver = Some(event_rx);
+
+        tracing::info!("Communication started.");
     }
 
     pub fn stop_services(&mut self) {
@@ -112,6 +124,8 @@ impl Conduit {
             tracing::warn!("Could not stop services as there weren't any active!");
             return;
         }
+
+        tracing::info!("Stopping all Conduit services...");
 
         let handles = self.handles.take().expect("This literally cannot happen");
         self.cancel_sender
@@ -123,6 +137,7 @@ impl Conduit {
                 Err(e) => tracing::error!("Error whilst joining services: {}", e),
             }
         }
+        tracing::info!("Stopped.");
     }
 
     pub fn poll_events<'py>(&mut self, py: Python<'py>) -> Option<(u32, &'py PyArray2<i16>)> {

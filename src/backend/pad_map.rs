@@ -72,11 +72,16 @@ impl PadMap {
 
         let mut pm = PadMap::default();
 
+        let mut is_header = true;
         for line in contents.lines() {
             let entries: Vec<&str> = line.split_terminator(",").collect();
 
             if entries.len() < ENTRIES_PER_LINE {
                 return Err(PadMapError::BadFileFormat);
+            }
+            if is_header {
+                is_header = false;
+                continue;
             }
 
             cb_id = entries[0].parse()?;
