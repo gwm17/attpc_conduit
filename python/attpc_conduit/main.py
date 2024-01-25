@@ -10,13 +10,6 @@ from .config import (
 from . import Conduit, init_conduit_logger
 import dearpygui.dearpygui as dpg
 import logging as log
-from enum import Enum
-
-
-class FDType(Enum):
-    SAVE = 0
-    LOAD = 1
-
 
 RATE_IN_STRING = "Conduit Data Rate In (MB/s):"
 RATE_OUT_STRING = "Conduit Data Rate In (MB/s):"
@@ -25,7 +18,6 @@ EVENT_STRING = "Last Processed Event:"
 init_conduit_logger()
 conduit = Conduit(PAD_ELEC_PATH)
 config = Config()
-save_or_load = FDType.LOAD
 
 
 def set_sliders_enabled(enabled: bool):
