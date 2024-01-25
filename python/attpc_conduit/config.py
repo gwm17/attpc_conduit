@@ -48,13 +48,13 @@ class DetectorParameters:
 
     """
 
-    magnetic_field: float = 0.0  # Tesla
-    electric_field: float = 0.0  # V/m
-    detector_length: float = 0.0  # mm
-    beam_region_radius: float = 0.0  # mm
-    micromegas_time_bucket: float = 0.0
-    window_time_bucket: float = 0.0
-    get_frequency: float = 0.0  # MHz
+    magnetic_field: float = 3.0  # Tesla
+    electric_field: float = 45000.0  # V/m
+    detector_length: float = 1000.0  # mm
+    beam_region_radius: float = 30.0  # mm
+    micromegas_time_bucket: float = 40.0
+    window_time_bucket: float = 420.0
+    get_frequency: float = 3.125  # MHz
 
 
 detector_param_props: dict[str, ParamProperties] = {
@@ -156,15 +156,15 @@ class ClusterParameters:
         Number of neighbors to use in scikit-learn's LocalOutlierFactor test
     """
 
-    min_cloud_size: int = 0
-    smoothing_neighbor_distance: float = 0.0  # mm
-    min_points: int = 0
-    big_event_cutoff: int = 0
-    min_size_big_event: int = 0
-    min_size_small_event: int = 0
-    circle_overlap_ratio: float = 0.0
-    fractional_charge_threshold: float = 0.0
-    n_neighbors_outiler_test: int = 0
+    min_cloud_size: int = 50
+    smoothing_neighbor_distance: float = 10.0  # mm
+    min_points: int = 3
+    big_event_cutoff: int = 300
+    min_size_big_event: int = 50
+    min_size_small_event: int = 10
+    circle_overlap_ratio: float = 0.7
+    fractional_charge_threshold: float = 0.65
+    n_neighbors_outlier_test: int = 5
 
 
 cluster_param_props: dict[str, ParamProperties] = {
@@ -188,7 +188,7 @@ cluster_param_props: dict[str, ParamProperties] = {
     "fractional_charge_threshold": ParamProperties(
         "Frac. Charge Threshold", 0.0, 3.0, 0.65, ParamType.FLOAT
     ),
-    "n_neighbors_outiler_test": ParamProperties(
+    "n_neighbors_outlier_test": ParamProperties(
         "N Neigh. Outlier Test", 0, 10, 5, ParamType.INT
     ),
 }
@@ -206,8 +206,8 @@ class EstimateParameters:
         maximum distance from beam axis for a trajectory vertex to be considered valid
     """
 
-    min_total_trajectory_points: int = 0
-    max_distance_from_beam_axis: float = 0.0  # mm
+    min_total_trajectory_points: int = 50
+    max_distance_from_beam_axis: float = 30.0  # mm
 
 
 estimate_param_props: dict[str, ParamProperties] = {
@@ -277,13 +277,13 @@ class Config:
         with open(path, "r") as config_file:
             config_data = json.load(config_file)
             det_params = config_data["Detector"]
-            self.detector.magnetic_field = det_params["magnetic_field(T)"]
-            self.detector.electric_field = det_params["electric_field(V/m)"]
-            self.detector.detector_length = det_params["detector_length(mm)"]
-            self.detector.beam_region_radius = det_params["beam_region_radius(mm)"]
+            self.detector.magnetic_field = det_params["magnetic_field"]
+            self.detector.electric_field = det_params["electric_field"]
+            self.detector.detector_length = det_params["detector_length"]
+            self.detector.beam_region_radius = det_params["beam_region_radius"]
             self.detector.micromegas_time_bucket = det_params["micromegas_time_bucket"]
             self.detector.window_time_bucket = det_params["window_time_bucket"]
-            self.detector.get_frequency = det_params["get_frequency(MHz)"]
+            self.detector.get_frequency = det_params["get_frequency"]
 
             get_params = config_data["GET"]
             self.get.baseline_window_scale = get_params["baseline_window_scale"]
@@ -295,26 +295,38 @@ class Config:
             cluster_params = config_data["Cluster"]
             self.cluster.min_cloud_size = cluster_params["min_cloud_size"]
             self.cluster.smoothing_neighbor_distance = cluster_params[
-                "smoothing_neighbor_distance(mm)"
+                "smoothing_neighbor_distance"
             ]
             self.cluster.big_event_cutoff = cluster_params["big_event_cutoff"]
-            self.cluster.min_size_big_event = cluster_params["minimum_size_big_event"]
-            self.cluster.min_size_small_event = cluster_params[
-                "minimum_size_small_event"
-            ]
-            self.cluster.min_points = cluster_params["minimum_points"]
+            self.cluster.min_size_big_event = cluster_params["min_size_big_event"]
+            self.cluster.min_size_small_event = cluster_params["min_size_small_event"]
+            self.cluster.min_points = cluster_params["min_points"]
             self.cluster.circle_overlap_ratio = cluster_params["circle_overlap_ratio"]
             self.cluster.fractional_charge_threshold = cluster_params[
                 "fractional_charge_threshold"
             ]
-            self.cluster.n_neighbors_outiler_test = cluster_params[
+            self.cluster.n_neighbors_outlier_test = cluster_params[
                 "n_neighbors_outlier_test"
             ]
 
             est_params = config_data["Estimate"]
             self.estimate.min_total_trajectory_points = est_params[
-                "mininum_total_trajectory_points"
+                "min_total_trajectory_points"
             ]
             self.estimate.max_distance_from_beam_axis = est_params[
-                "maximum_distance_from_beam_axis"
+                "max_distance_from_beam_axis"
             ]
+
+    def save(self, path: Path):
+        with open(path, "w") as json_file:
+            json.dump(
+                self,
+                json_file,
+                default=lambda obj: {
+                    "Detector": obj.detector.__dict__,
+                    "GET": obj.get.__dict__,
+                    "Cluster": obj.cluster.__dict__,
+                    "Estimate": obj.estimate.__dict__,
+                },
+                indent=4,
+            )

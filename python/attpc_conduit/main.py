@@ -10,6 +10,13 @@ from .config import (
 from . import Conduit, init_conduit_logger
 import dearpygui.dearpygui as dpg
 import logging as log
+from enum import Enum
+
+
+class FDType(Enum):
+    SAVE = 0
+    LOAD = 1
+
 
 RATE_IN_STRING = "Conduit Data Rate In (MB/s):"
 RATE_OUT_STRING = "Conduit Data Rate In (MB/s):"
@@ -18,6 +25,7 @@ EVENT_STRING = "Last Processed Event:"
 init_conduit_logger()
 conduit = Conduit(PAD_ELEC_PATH)
 config = Config()
+save_or_load = FDType.LOAD
 
 
 def set_sliders_enabled(enabled: bool):
@@ -29,6 +37,17 @@ def set_sliders_enabled(enabled: bool):
         dpg.configure_item(key, enabled=enabled)
     for key in config.estimate.__dict__.keys():
         dpg.configure_item(key, enabled=enabled)
+
+
+def set_sliders_values():
+    for key, value in config.detector.__dict__.items():
+        dpg.set_value(key, value)
+    for key, value in config.get.__dict__.items():
+        dpg.set_value(key, value)
+    for key, value in config.cluster.__dict__.items():
+        dpg.set_value(key, value)
+    for key, value in config.estimate.__dict__.items():
+        dpg.set_value(key, value)
 
 
 def set_start_enabled(enabled: bool):
@@ -92,6 +111,15 @@ def estimate_field_callback(sender: str):
         config.estimate.__dict__[sender] = dpg.get_value(sender)
     else:
         log.error(f"Estimate key error. Sender: {sender}")
+
+
+def save_callback(sender: str, app_data):
+    config.save(app_data["file_path_name"])
+
+
+def load_callback(sender: str, app_data):
+    config.load(app_data["file_path_name"])
+    set_sliders_values()
 
 
 def create_detector_sliders():
@@ -201,11 +229,35 @@ def create_estimate_sliders():
 dpg.create_context()
 dpg.create_viewport(title="AT-TPC Conduit", width=600, height=900)
 
+with dpg.file_dialog(
+    show=False,
+    callback=save_callback,
+    tag="save_file_dialog",
+    default_filename="",
+    height=600,
+    width=400,
+):
+    dpg.add_file_extension(".json", color=(0, 255, 0))
+
+with dpg.file_dialog(
+    show=False,
+    callback=load_callback,
+    tag="load_file_dialog",
+    default_filename="",
+    height=600,
+    width=400,
+):
+    dpg.add_file_extension(".json", color=(0, 255, 0))
+
 with dpg.window(label="Conduit Control", tag="Conduit Control"):
     with dpg.menu_bar():
         with dpg.menu(label="File"):
-            dpg.add_menu_item(label="Save...")
-            dpg.add_menu_item(label="Load...")
+            dpg.add_menu_item(
+                label="Save...", callback=lambda: dpg.show_item("save_file_dialog")
+            )
+            dpg.add_menu_item(
+                label="Load...", callback=lambda: dpg.show_item("load_file_dialog")
+            )
     dpg.add_text("Control")
     dpg.add_separator()
     dpg.add_text(f"{RATE_IN_STRING} 0.0", tag="rate_in")
