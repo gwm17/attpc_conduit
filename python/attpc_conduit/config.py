@@ -1,6 +1,28 @@
 from dataclasses import dataclass
 from pathlib import Path
 import json
+from enum import Enum
+
+
+class ParamType(Enum):
+    FLOAT = 0
+    INT = 1
+
+
+class ParamProperties:
+    def __init__(
+        self,
+        label: str,
+        min_val: int | float,
+        max_val: int | float,
+        default: int | float,
+        ptype: ParamType,
+    ):
+        self.label = label
+        self.min_val = min_val
+        self.max_val = max_val
+        self.default = default
+        self.type = ptype
 
 
 @dataclass
@@ -35,6 +57,31 @@ class DetectorParameters:
     get_frequency: float = 0.0  # MHz
 
 
+detector_param_props: dict[str, ParamProperties] = {
+    "magnetic_field": ParamProperties(
+        "Magnetic Field (T)", 0.0, 6.0, 3.0, ParamType.FLOAT
+    ),
+    "electric_field": ParamProperties(
+        "Electric Field (V/m)", 0.0, 80000.0, 45000.0, ParamType.FLOAT
+    ),
+    "detector_length": ParamProperties(
+        "Detector Length (mm)", 0.0, 2000.0, 1000.0, ParamType.FLOAT
+    ),
+    "beam_region_radius": ParamProperties(
+        "Beam Region Radius (mm)", 0.0, 100.0, 30.0, ParamType.FLOAT
+    ),
+    "micromegas_time_bucket": ParamProperties(
+        "MM Time Bucket", 0.0, 600.0, 40.0, ParamType.FLOAT
+    ),
+    "window_time_bucket": ParamProperties(
+        "Window Time Bucket", 0.0, 600.0, 420.0, ParamType.FLOAT
+    ),
+    "get_frequency": ParamProperties(
+        "GET Freq. (MHz)", 0.0, 6.25, 3.125, ParamType.FLOAT
+    ),
+}
+
+
 @dataclass
 class GetParameters:
     """Parameters for GET trace signal analysis
@@ -58,6 +105,25 @@ class GetParameters:
     peak_prominence: float = 20.0
     peak_max_width: float = 100.0
     peak_threshold: float = 25.0
+
+
+get_param_props: dict[str, ParamProperties] = {
+    "baseline_window_scale": ParamProperties(
+        "Baseline Scale", 0.0, 200.0, 20.0, ParamType.FLOAT
+    ),
+    "peak_separation": ParamProperties(
+        "Peak Separation", 0.0, 200.0, 50.0, ParamType.FLOAT
+    ),
+    "peak_prominence": ParamProperties(
+        "Peak Prominence", 0.0, 200.0, 20.0, ParamType.FLOAT
+    ),
+    "peak_max_width": ParamProperties(
+        "Peak Max Width", 0.0, 200.0, 100.0, ParamType.FLOAT
+    ),
+    "peak_threshold": ParamProperties(
+        "Peak Max Width", 0.0, 200.0, 25.0, ParamType.FLOAT
+    ),
+}
 
 
 @dataclass
@@ -101,6 +167,33 @@ class ClusterParameters:
     n_neighbors_outiler_test: int = 0
 
 
+cluster_param_props: dict[str, ParamProperties] = {
+    "min_cloud_size": ParamProperties(
+        "Min Cloud Size (points)", 0, 300, 50, ParamType.INT
+    ),
+    "smoothing_neighbor_distance": ParamProperties(
+        "Smoothing Raidus (mm)", 0.0, 100.0, 10.0, ParamType.FLOAT
+    ),
+    "min_points": ParamProperties("Min Points", 0, 10, 3, ParamType.INT),
+    "big_event_cutoff": ParamProperties(
+        "Big Event Cutoff", 0, 3000, 300, ParamType.INT
+    ),
+    "min_size_big_event": ParamProperties("Min Size (Big)", 0, 1000, 50, ParamType.INT),
+    "min_size_small_event": ParamProperties(
+        "Min Size (Small)", 0, 1000, 10, ParamType.INT
+    ),
+    "circle_overlap_ratio": ParamProperties(
+        "Circle Overlap Ratio", 0.0, 1.0, 0.7, ParamType.FLOAT
+    ),
+    "fractional_charge_threshold": ParamProperties(
+        "Frac. Charge Threshold", 0.0, 3.0, 0.65, ParamType.FLOAT
+    ),
+    "n_neighbors_outiler_test": ParamProperties(
+        "N Neigh. Outlier Test", 0, 10, 5, ParamType.INT
+    ),
+}
+
+
 @dataclass
 class EstimateParameters:
     """Parameters for physics estimation
@@ -117,7 +210,17 @@ class EstimateParameters:
     max_distance_from_beam_axis: float = 0.0  # mm
 
 
-class Conifg:
+estimate_param_props: dict[str, ParamProperties] = {
+    "min_total_trajectory_points": ParamProperties(
+        "Min Points", 0, 600, 50, ParamType.INT
+    ),
+    "max_distance_from_beam_axis": ParamProperties(
+        "Max Vertex Dist. To Beam Axis", 0.0, 100.0, 30.0, ParamType.FLOAT
+    ),
+}
+
+
+class Config:
     """Class representing a Conduit configuration
 
     Attributes
