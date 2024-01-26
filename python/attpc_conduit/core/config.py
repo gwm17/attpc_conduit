@@ -170,8 +170,8 @@ class ClusterParameters:
     big_event_cutoff: int = 300
     min_size_big_event: int = 50
     min_size_small_event: int = 10
-    circle_overlap_ratio: float = 0.7
-    fractional_charge_threshold: float = 0.65
+    circle_overlap_ratio: float = 0.75
+    fractional_charge_threshold: float = 0.75
     n_neighbors_outlier_test: int = 5
 
 
@@ -191,10 +191,10 @@ cluster_param_props: dict[str, ParamProperties] = {
         "Min Size (Small)", 0, 1000, 10, ParamType.INT
     ),
     "circle_overlap_ratio": ParamProperties(
-        "Circle Overlap Ratio", 0.0, 1.0, 0.7, ParamType.FLOAT
+        "Circle Overlap Ratio", 0.0, 1.0, 0.75, ParamType.FLOAT
     ),
     "fractional_charge_threshold": ParamProperties(
-        "Frac. Charge Threshold", 0.0, 3.0, 0.65, ParamType.FLOAT
+        "Frac. Charge Threshold", 0.0, 3.0, 0.75, ParamType.FLOAT
     ),
     "n_neighbors_outlier_test": ParamProperties(
         "N Neigh. Outlier Test", 0, 10, 5, ParamType.INT

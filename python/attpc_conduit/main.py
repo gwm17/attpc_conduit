@@ -18,16 +18,29 @@ import logging as log
 import rerun as rr
 import numpy as np
 
+
 RATE_IN_STRING = "Conduit Data Rate In (MB/s):"
 RATE_OUT_STRING = "Conduit Data Rate Out (MB/s):"
 EVENT_STRING = "Last Processed Event:"
-RADIUS = 5.0
+RADIUS = 2.0
 
 init_conduit_logger()
 conduit = Conduit(PAD_ELEC_PATH)
 config = Config()
 pad_map = PadMap()
 rr.init("attpc_conduit_data", spawn=True)
+
+# log the pad plane bounds
+plane = generate_circle_points(0.0, 0.0, 300.0)
+rr.log("pad_plane/bounds", rr.LineStrips2D(plane), timeless=True)
+# log the coordinate orientation for 3D
+rr.log("cloud", rr.ViewCoordinates.RIGHT_HAND_X_UP)
+# log the detector box
+rr.log(
+    "cloud/detector_box",
+    rr.Boxes3D(half_sizes=[300.0, 300.0, 500.0], centers=[0.0, 0.0, 500.0]),
+    timeless=True,
+)
 
 
 def set_sliders_enabled(enabled: bool):
@@ -305,11 +318,11 @@ def main():
             )
             radii = np.full(len(pc.cloud), RADIUS)
             rr.log(
-                f"event_{pc.event_number}/cloud",
+                f"cloud/event_{pc.event_number}/point_cloud",
                 rr.Points3D(pc.cloud[:, :3], radii=radii),
             )
             rr.log(
-                f"event_{pc.event_number}/pad_plane",
+                f"pad_plane/event_{pc.event_number}/raw_plane",
                 rr.Points2D(pc.cloud[:, :2], radii=radii),
             )
             clusters = phase_cluster(pc, config.cluster)
@@ -319,17 +332,17 @@ def main():
                 for idx, cluster in enumerate(clusters):
                     radii = np.full(len(cluster.data), RADIUS)
                     rr.log(
-                        f"event_{cluster.event}/cluster_{cluster.label}/cloud",
+                        f"cloud/event_{cluster.event}/cluster_{cluster.label}",
                         rr.Points3D(cluster.data[:, :3], radii=radii),
                     )
                     rr.log(
-                        f"event_{cluster.event}/cluster_{cluster.label}/pad_plane",
+                        f"pad_plane/event_{cluster.event}/cluster_{cluster.label}",
                         rr.Points2D(cluster.data[:, :2], radii=radii),
                     )
                     est = estimates[idx]
                     if est.failed == False:
                         rr.log(
-                            f"event_{cluster.event}/cluster_{cluster.label}/estimates/vertex",
+                            f"cloud/event_{cluster.event}/cluster_{cluster.label}/vertex",
                             rr.Points3D(est.vertex, radii=[RADIUS]),
                         )
                         rho = est.brho / config.detector.magnetic_field * 1000.0
@@ -338,7 +351,7 @@ def main():
                         )
                         radii = np.full(len(circle), RADIUS)
                         rr.log(
-                            f"event_{cluster.event}/cluster_{cluster.label}/estimates/circle",
+                            f"pad_plane/event_{cluster.event}/cluster_{cluster.label}/circle",
                             rr.Points2D(circle, radii=radii),
                         )
         ## Will also call out to set UI values to update status

@@ -150,7 +150,7 @@ def join_clusters_step(
 
         new_cluster = LabeledCloud(g, PointCloud())
         new_cluster.point_cloud.event_number = event_number
-        new_cluster.point_cloud.cloud = np.zeros((0, 8))
+        new_cluster.point_cloud.cloud = np.zeros((0, 7))
         for idx in groups[g]:
             new_cluster.point_cloud.cloud = np.concatenate(
                 (new_cluster.point_cloud.cloud, clusters[idx].point_cloud.cloud), axis=0
