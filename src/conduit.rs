@@ -56,7 +56,6 @@ impl Conduit {
         tracing::subscriber::set_global_default(subscriber)
             .expect("Could not initialize the tracing system!");
 
-        tracing::info!("Can you hear me?");
         Self {
             event_receiver: None,
             cancel_sender: cancel_tx,
