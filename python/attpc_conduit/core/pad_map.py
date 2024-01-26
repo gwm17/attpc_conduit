@@ -3,9 +3,9 @@ from .hardware_id import HardwareID, generate_electronics_id
 from pathlib import Path
 from dataclasses import dataclass, field
 
-PAD_ELEC_PATH = Path(__file__).parent.resolve() / "assets/pad_elec.csv"
-PAD_GEOM_PATH = Path(__file__).parent.resolve() / "assets/pad_xy.csv"
-PAD_TIME_PATH = Path(__file__).parent.resolve() / "assets/pad_time.csv"
+PAD_ELEC_PATH = Path(__file__).parent.resolve() / "../assets/pad_elec.csv"
+PAD_GEOM_PATH = Path(__file__).parent.resolve() / "../assets/pad_xy.csv"
+PAD_TIME_PATH = Path(__file__).parent.resolve() / "../assets/pad_time.csv"
 
 
 @dataclass
