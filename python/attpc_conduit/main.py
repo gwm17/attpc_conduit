@@ -1,4 +1,4 @@
-from .core.pad_map import PAD_ELEC_PATH
+from .core.pad_map import PAD_ELEC_PATH, PadMap
 from .core.config import (
     Config,
     detector_param_props,
@@ -8,17 +8,25 @@ from .core.config import (
     ParamType,
 )
 from . import Conduit, init_conduit_logger
+from .phase_pointcloud import phase_pointcloud
+from .phase_cluster import phase_cluster
+from .phase_estimate import phase_estimate
+from .core.circle import generate_circle_points
+
 import dearpygui.dearpygui as dpg
 import logging as log
 import rerun as rr
+import numpy as np
 
 RATE_IN_STRING = "Conduit Data Rate In (MB/s):"
 RATE_OUT_STRING = "Conduit Data Rate Out (MB/s):"
 EVENT_STRING = "Last Processed Event:"
+RADIUS = 5.0
 
 init_conduit_logger()
 conduit = Conduit(PAD_ELEC_PATH)
 config = Config()
+pad_map = PadMap()
 rr.init("attpc_conduit_data", spawn=True)
 
 
@@ -291,6 +299,48 @@ def main():
     while dpg.is_dearpygui_running() == True:
         event = conduit.poll_events()
         ## Do analysis here...
+        if event is not None:
+            pc = phase_pointcloud(
+                event[0], event[1], pad_map, config.get, config.detector
+            )
+            radii = np.full(len(pc.cloud), RADIUS)
+            rr.log(
+                f"event_{pc.event_number}/cloud",
+                rr.Points3D(pc.cloud[:, :3], radii=radii),
+            )
+            rr.log(
+                f"event_{pc.event_number}/pad_plane",
+                rr.Points2D(pc.cloud[:, :2], radii=radii),
+            )
+            clusters = phase_cluster(pc, config.cluster)
+            if clusters is not None:
+                estimates = phase_estimate(clusters, config.estimate, config.detector)
+
+                for idx, cluster in enumerate(clusters):
+                    radii = np.full(len(cluster.data), RADIUS)
+                    rr.log(
+                        f"event_{cluster.event}/cluster_{cluster.label}/cloud",
+                        rr.Points3D(cluster.data[:, :3], radii=radii),
+                    )
+                    rr.log(
+                        f"event_{cluster.event}/cluster_{cluster.label}/pad_plane",
+                        rr.Points2D(cluster.data[:, :2], radii=radii),
+                    )
+                    est = estimates[idx]
+                    if est.failed == False:
+                        rr.log(
+                            f"event_{cluster.event}/cluster_{cluster.label}/estimates/vertex",
+                            rr.Points3D(est.vertex, radii=[RADIUS]),
+                        )
+                        rho = est.brho / config.detector.magnetic_field * 1000.0
+                        circle = generate_circle_points(
+                            est.center[0], est.center[1], rho
+                        )
+                        radii = np.full(len(circle), RADIUS)
+                        rr.log(
+                            f"event_{cluster.event}/cluster_{cluster.label}/estimates/circle",
+                            rr.Points2D(circle, radii=radii),
+                        )
         ## Will also call out to set UI values to update status
         dpg.render_dearpygui_frame()
 

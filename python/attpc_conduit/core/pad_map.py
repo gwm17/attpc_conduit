@@ -94,12 +94,13 @@ class PadMap:
             for pad_number, line in enumerate(lines):
                 entries = line.split(",")
                 self.map[pad_number] = PadData(x=float(entries[0]), y=float(entries[1]))
-        with open(time_correction_path, "r") as timefile:
-            timefile.readline()
-            lines = timefile.readlines()
-            for pad_number, line in enumerate(lines):
-                entries = line.split(",")
-                self.map[pad_number].time_offset = float(entries[0])
+        # TODO: This asset doesn't exist yet
+        # with open(time_correction_path, "r") as timefile:
+        #     timefile.readline()
+        #     lines = timefile.readlines()
+        #     for pad_number, line in enumerate(lines):
+        #         entries = line.split(",")
+        #         self.map[pad_number].time_offset = float(entries[0])
 
         with open(electronics_path, "r") as elecfile:
             elecfile.readline()
