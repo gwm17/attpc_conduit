@@ -1,5 +1,5 @@
-from .pad_map import PAD_ELEC_PATH
-from .config import (
+from .core.pad_map import PAD_ELEC_PATH
+from .core.config import (
     Config,
     detector_param_props,
     get_param_props,
@@ -12,7 +12,7 @@ import dearpygui.dearpygui as dpg
 import logging as log
 
 RATE_IN_STRING = "Conduit Data Rate In (MB/s):"
-RATE_OUT_STRING = "Conduit Data Rate In (MB/s):"
+RATE_OUT_STRING = "Conduit Data Rate Out (MB/s):"
 EVENT_STRING = "Last Processed Event:"
 
 init_conduit_logger()

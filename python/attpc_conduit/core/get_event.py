@@ -114,7 +114,7 @@ def preprocess_traces(traces: np.ndarray, baseline_window_scale: float) -> np.nd
     bases: np.ndarray = traces.copy()
     for row in bases:
         mean = np.mean(row)
-        sigma = np.std(row)
+        sigma = float(np.std(row))
         mask = row - mean > sigma * 1.5
         row[mask] = np.mean(row[~mask])
 
