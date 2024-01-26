@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import json
 from enum import Enum
+from typing import TypeVar, Generic
 
 
 class ParamType(Enum):
@@ -9,13 +10,20 @@ class ParamType(Enum):
     INT = 1
 
 
-class ParamProperties:
+# This is a generic type alias used for param properties
+T = TypeVar("T", int, float)
+
+
+# By giving this class a generic, it can represent parameters for both Integer and Floating point values
+# and still be readable to the type checker (in comparision to defining as int | float which works but is
+# not readable to the type checker when values are called)
+class ParamProperties(Generic[T]):
     def __init__(
         self,
         label: str,
-        min_val: int | float,
-        max_val: int | float,
-        default: int | float,
+        min_val: T,
+        max_val: T,
+        default: T,
         ptype: ParamType,
     ):
         self.label = label
