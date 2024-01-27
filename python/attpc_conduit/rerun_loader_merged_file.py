@@ -61,11 +61,13 @@ def get_event_range(trace_file: h5.File) -> tuple[int, int]:
 
 
 def main() -> None:
+    print("here!")
     config = Config(Path("config.json"))
     pad_map = PadMap()
 
     path = Path(args.filepath)
-    if not path.exists() or not path.is_file() or path.suffix != "h5":
+    if not path.exists() or not path.is_file() or path.suffix != ".h5":
+        print(f"here {path} {path.suffix}")
         exit(
             rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE
         )  # Indicates to Rerun that this file was not handled by this loader
@@ -87,6 +89,7 @@ def main() -> None:
     rr.init("attpc_h5_data", recording_id=args.recording_id)
     rr.stdout()
 
+    print("here")
     # log the pad plane bounds
     plane = generate_circle_points(0.0, 0.0, 300.0)
     rr.log("Detector2D/bounds", rr.LineStrips2D(plane), timeless=True)
@@ -163,9 +166,9 @@ def main() -> None:
                     )
                     rr.log(
                         "Physics/Kinematics",
-                        rr.Points2D([np.rad2deg(est.polar), est.brho], radii=radii),
+                        rr.Points2D([np.rad2deg(est.polar), est.brho], radii=[RADIUS]),
                     )
                     rr.log(
                         "Physics/ParticleID",
-                        rr.Points2D([est.dEdx, est.brho], radii=radii),
+                        rr.Points2D([est.dEdx, est.brho], radii=[RADIUS]),
                     )
