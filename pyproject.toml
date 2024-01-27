@@ -17,10 +17,12 @@ dependencies = [
     "scikit-learn>=1.4",
     "dearpygui>=1.10",
     "rerun-sdk>=0.12",
+    "h5py>=3.10",
 ]
 
 [project.scripts]
 run-conduit = "attpc_conduit.main:main"
+rerun-loader-merged-file = "attpc_conduit.rerun_loader_merged_file:main"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
