@@ -8,10 +8,17 @@ from .phase_pointcloud import phase_pointcloud
 from .phase_cluster import phase_cluster
 from .phase_estimate import phase_estimate
 from .core.circle import generate_circle_points
+from .plot.histogram import Histogrammer
 import h5py as h5
 import numpy as np
 
 RADIUS = 2.0
+
+grammer = Histogrammer()
+
+grammer.add_2D("pid", 0.0, 5.0e3, 512, "dE/dx", 0.0, 3.0, 512, "Brho(Tm)")
+grammer.add_2D("kinematics", 0.0, 180.0, 180, "Polar(deg)", 0.0, 3.0, 512, "Brho(Tm)")
+grammer.add_1D("polar", 0.0, 180.0, 180, "polar(deg)")
 
 # The Rerun Viewer will always pass these two pieces of information:
 # 1. The path to be loaded, as a positional arg.
@@ -101,15 +108,6 @@ def main() -> None:
         rr.Boxes3D(half_sizes=[300.0, 300.0, 500.0], centers=[0.0, 0.0, 500.0]),
         timeless=True,
     )
-    rr.log(
-        "Physics/Kinematics/bounds",
-        rr.Boxes2D(half_sizes=[5000.0, 3.0], centers=[5000.0, 3.0]),
-        timeless=True,
-    )
-    rr.log(
-        "Physics/ParticleID/bounds",
-        rr.Boxes2D(half_sizes=[90.0, 3.0], centers=[90.0, 3.0]),
-    )
 
     for event_id in range(min_event, max_event):
         event_data = None
@@ -164,11 +162,21 @@ def main() -> None:
                         f"Detector2D/pad_plane/cluster_{cluster.label}/circle",
                         rr.Points2D(circle, radii=radii),
                     )
-                    rr.log(
-                        "Physics/Kinematics",
-                        rr.Points2D([np.rad2deg(est.polar), est.brho], radii=[RADIUS]),
-                    )
-                    rr.log(
-                        "Physics/ParticleID",
-                        rr.Points2D([est.dEdx, est.brho], radii=[RADIUS]),
-                    )
+                    grammer.fill_2D("pid", est.dEdx, est.brho)
+                    grammer.fill_2D("kinematics", np.rad2deg(est.polar), est.brho)
+                    grammer.fill_1D("polar", np.rad2deg(est.polar))
+
+                    for gram in grammer.grams_1d.values():
+                        rr.log(
+                            f"Histograms/{gram.name}",
+                            rr.BarChart(gram.counts),
+                        )
+
+                    for gram in grammer.grams_2d.values():
+                        rr.log(
+                            f"Histograms/{gram.name}",
+                            rr.Tensor(
+                                gram.counts,
+                                dim_names=(gram.x_axis_title, gram.y_axis_title),
+                            ),
+                        )

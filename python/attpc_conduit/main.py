@@ -12,6 +12,7 @@ from .phase_pointcloud import phase_pointcloud
 from .phase_cluster import phase_cluster
 from .phase_estimate import phase_estimate
 from .core.circle import generate_circle_points
+from .plot.histogram import Histogrammer
 
 import dearpygui.dearpygui as dpg
 import logging as log
@@ -35,6 +36,10 @@ logging.info("This INFO log got added through the standard logging interface")
 conduit = Conduit(PAD_ELEC_PATH)
 config = Config()
 pad_map = PadMap()
+grammer = Histogrammer()
+
+grammer.add_2D("pid", 0.0, 5.0e3, 512, "dE/dx", 0.0, 3.0, 512, "Brho(Tm)")
+grammer.add_2D("kinematics", 0.0, 180.0, 180, "Polar(deg)", 0.0, 3.0, 512, "Brho(Tm)")
 
 # log the pad plane bounds
 plane = generate_circle_points(0.0, 0.0, 300.0)
@@ -367,6 +372,24 @@ def main():
                             f"Detector2D/pad_plane/cluster_{cluster.label}/circle",
                             rr.Points2D(circle, radii=radii),
                         )
+
+                        grammer.fill_2D("pid", est.dEdx, est.brho)
+                        grammer.fill_2D("kinematics", np.rad2deg(est.polar), est.brho)
+
+                        for gram in grammer.grams_1d.values():
+                            rr.log(
+                                f"Histograms/{gram.name}",
+                                rr.BarChart(gram.counts),
+                            )
+
+                        for gram in grammer.grams_2d.values():
+                            rr.log(
+                                f"Histograms/{gram.name}",
+                                rr.Tensor(
+                                    gram.counts,
+                                    dim_names=(gram.x_axis_title, gram.y_axis_title),
+                                ),
+                            )
         ## Will also call out to set UI values to update status
         dpg.render_dearpygui_frame()
 
