@@ -14,11 +14,13 @@ import numpy as np
 
 RADIUS = 2.0
 
+## Initialize histogrammer ##
 grammer = Histogrammer()
 
 grammer.add_2D("pid", 0.0, 5.0e3, 512, "dE/dx", 0.0, 3.0, 512, "Brho(Tm)")
 grammer.add_2D("kinematics", 0.0, 180.0, 180, "Polar(deg)", 0.0, 3.0, 512, "Brho(Tm)")
 grammer.add_1D("polar", 0.0, 180.0, 180, "polar(deg)")
+## End histogrammer initialization ##
 
 # The Rerun Viewer will always pass these two pieces of information:
 # 1. The path to be loaded, as a positional arg.
@@ -68,6 +70,7 @@ def get_event_range(trace_file: h5.File) -> tuple[int, int]:
 
 
 def main() -> None:
+    """The entry point for the rerun-loader-merged-file script"""
     print("here!")
     config = Config(Path("config.json"))
     pad_map = PadMap()
@@ -94,9 +97,8 @@ def main() -> None:
         exit(rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE)
 
     rr.init("attpc_h5_data", recording_id=args.recording_id)
-    rr.stdout()
+    rr.stdout()  # Required for custom file loaders
 
-    print("here")
     # log the pad plane bounds
     plane = generate_circle_points(0.0, 0.0, 300.0)
     rr.log("Detector2D/bounds", rr.LineStrips2D(plane), timeless=True)

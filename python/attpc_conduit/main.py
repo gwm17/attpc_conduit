@@ -26,18 +26,22 @@ RATE_OUT_STRING = "Conduit Data Rate Out (MB/s):"
 EVENT_STRING = "Last Processed Event:"
 RADIUS = 2.0
 
-init_conduit_logger()
-rr.init("attpc_conduit_data", spawn=True)
+## Initialize a whole mess of global data ##
+
+init_conduit_logger()  # initialize Rust logging
+rr.init("attpc_conduit_data", spawn=True)  # initialize Rerun
 # handle text logs
 logging.getLogger().addHandler(rr.LoggingHandler("logs/handler"))
 logging.getLogger().setLevel(-1)
 logging.info("This INFO log got added through the standard logging interface")
 
+# Create conduit and friends
 conduit = Conduit(PAD_ELEC_PATH)
 config = Config()
 pad_map = PadMap()
 grammer = Histogrammer()
 
+# Add some histograms
 grammer.add_2D("pid", 0.0, 5.0e3, 512, "dE/dx", 0.0, 3.0, 512, "Brho(Tm)")
 grammer.add_2D("kinematics", 0.0, 180.0, 180, "Polar(deg)", 0.0, 3.0, 512, "Brho(Tm)")
 
@@ -52,6 +56,11 @@ rr.log(
     rr.Boxes3D(half_sizes=[300.0, 300.0, 500.0], centers=[0.0, 0.0, 500.0]),
     timeless=True,
 )
+
+## End of initialization ##
+
+
+## DearPyGui Callbacks and Handlers ##
 
 
 def set_sliders_enabled(enabled: bool):
@@ -252,6 +261,8 @@ def create_estimate_sliders():
                 )
 
 
+## Setup DearPyGui ##
+
 dpg.create_context()
 dpg.create_viewport(title="AT-TPC Conduit", width=600, height=900)
 
@@ -315,18 +326,32 @@ with dpg.window(label="Conduit Control", tag="Conduit Control"):
     create_estimate_sliders()
     dpg.add_separator()
 
+## Finish DearPyGui setup ##
+
 
 def main():
+    """Entry point for run-conduit script"""
+
+    # Start the gui
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.set_primary_window("Conduit Control", True)
+    # This is the main DearPyGui event loop.
+    # The more stuff shoved in here, the less
+    # responsive the ConduitPanel will be
     while dpg.is_dearpygui_running() == True:
-        event = conduit.poll_events()
+        event = conduit.poll_events()  # Poll the conduit
         ## Do analysis here...
         if event is not None:
-            rr.set_time_sequence("event_time", event[0])
+            rr.set_time_sequence(
+                "event_time", event[0]
+            )  # Rerun timeline for AT-TPC events
+
+            # Clear some Rerun entities
             rr.log("Detector3D/cloud", rr.Clear(recursive=True))
             rr.log("Detector2D/pad_plane", rr.Clear(recursive=True))
+
+            # Run the point cloud phase
             pc = phase_pointcloud(
                 event[0],
                 event[1],
@@ -343,8 +368,11 @@ def main():
                 f"Detector2D/pad_plane/raw_plane",
                 rr.Points2D(pc.cloud[:, :2], radii=radii),
             )
+
+            # Run the cluster phase
             clusters = phase_cluster(pc, config.cluster)
             if clusters is not None:
+                # Run the estimate phase
                 estimates = phase_estimate(clusters, config.estimate, config.detector)
 
                 for idx, cluster in enumerate(clusters):

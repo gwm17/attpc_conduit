@@ -18,6 +18,8 @@ T = TypeVar("T", int, float)
 # and still be readable to the type checker (in comparision to defining as int | float which works but is
 # not readable to the type checker when values are called)
 class ParamProperties(Generic[T]):
+    """Class providing parameter validation to UI"""
+
     def __init__(
         self,
         label: str,

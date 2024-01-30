@@ -209,10 +209,13 @@ def phase_estimate(
         A list of estimate results of the same length as the clusters Parameter. If the failed field of the EstimateResult is set
         to True, the estimation analysis failed and the result should be discarded
     """
-    # Create the result storage
+    # Create the results
     results = [
         estimate_physics(cluster, estimate_params, detector_params)
         for cluster in clusters
     ]
+
+    # Toss any failures
+    results = [res for res in results if not res.failed]
 
     return results
