@@ -28,3 +28,4 @@ rerun-loader-merged-file = "attpc_conduit.rerun_loader_merged_file:main"
 features = ["pyo3/extension-module"]
 module-name = "attpc_conduit._attpc_conduit"
 python-source = "python"
+profile = "release"
