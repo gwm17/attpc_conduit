@@ -1,3 +1,6 @@
+//! This is the module containing all of the backend code
+//! related to running the attpc_conduit
+
 pub mod constants;
 pub mod ecc_reciever;
 pub mod error;

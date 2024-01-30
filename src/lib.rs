@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 
 use conduit::Conduit;
 
-/// A Python module implemented in Rust.
+/// The _attpc_conduit python module
 #[pymodule]
 fn _attpc_conduit(_py: Python, m: &PyModule) -> PyResult<()> {
     pyo3_log::init();

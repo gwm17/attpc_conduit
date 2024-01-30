@@ -12,6 +12,12 @@ use super::graw_frame::GrawFrame;
 use super::message::ConduitMessage;
 use super::pad_map::PadMap;
 
+/// An EventCache is a storage system
+/// for event data. In live data taking, modules may fill their internal memory
+/// buffers at different rates, resulting in chunks of the same physical event
+/// being transmitted at different times. To handle this, we cache events, building
+/// multiple events at the same time. Once we reach a size limit, the least recently
+/// modified event is popped from the cache.
 #[derive(Debug)]
 struct EventCache {
     events: FxHashMap<u32, Event>,
@@ -19,6 +25,7 @@ struct EventCache {
 }
 
 impl EventCache {
+    /// Create a new cache
     pub fn new() -> Self {
         EventCache {
             events: FxHashMap::default(),
@@ -26,6 +33,8 @@ impl EventCache {
         }
     }
 
+    /// Add a frame to the cache. If there is no event to which this frame
+    /// corresponds, a new event is created for it.
     pub fn add_frame(
         &mut self,
         pad_map: &PadMap,
@@ -56,6 +65,7 @@ impl EventCache {
         Ok(())
     }
 
+    /// Returns the least recently used event
     pub fn get_lru_event(&mut self) -> Result<Event, EventBuilderError> {
         if let Some(least_recently_used) = self.order.pop_front() {
             Ok(self.events.remove(&least_recently_used).expect(&format!(
@@ -67,6 +77,7 @@ impl EventCache {
         }
     }
 
+    /// Returns the size of the cache in GRAW Frames
     pub fn size(&self) -> usize {
         self.events
             .iter()
@@ -74,8 +85,8 @@ impl EventCache {
     }
 }
 
-/// # EventBuilder
-/// EventBuilder takes GrawFrames and composes them into Events.
+/// EventBuilder receives GrawFrames from the various ECCReceivers and composes them into
+/// events. It then transmits events to the Conduit, where they can be polled by other pipelines.
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct EventBuilder {
@@ -102,6 +113,7 @@ impl EventBuilder {
         }
     }
 
+    /// The main task of the EventBuilder to be spawned
     pub async fn run(
         &mut self,
         cancel: &mut broadcast::Receiver<ConduitMessage>,
@@ -116,6 +128,8 @@ impl EventBuilder {
         }
     }
 
+    /// Reads the GrawFrame from an ECCReceiver and adds it to the event cache. If the cache is full,
+    /// an event is sent up to the conduit for exposure.
     async fn read_and_send(&mut self) -> Result<(), EventBuilderError> {
         let new_frame = match self.frame_receiver.recv().await {
             Some(frame) => frame,
@@ -139,6 +153,7 @@ impl EventBuilder {
     }
 }
 
+/// Helper function for starting the EventBuilder
 pub fn startup_event_builder(
     rt: &tokio::runtime::Runtime,
     frame_rx: mpsc::Receiver<GrawFrame>,

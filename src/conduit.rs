@@ -19,6 +19,9 @@ use super::backend::pad_map::PadMap;
 use super::backend::point_cloud::PointCloud;
 use super::backend::server::startup_server;
 
+/// The Conduit is the main interface for controlling the behavior of the backend
+/// as well as exposing events to further analysis pipelines. Conduit is python compatible
+/// with all of it's methods exposed to Python.
 #[pyclass]
 #[derive(Debug)]
 pub struct Conduit {
@@ -33,6 +36,7 @@ pub struct Conduit {
 
 #[pymethods]
 impl Conduit {
+    /// Create a new Conduit. Requires a path to a pad map.
     #[new]
     pub fn new(pad_path: PathBuf) -> Self {
         let rt = tokio::runtime::Builder::new_multi_thread()
@@ -67,6 +71,7 @@ impl Conduit {
         }
     }
 
+    /// Initialize and start all of the backend services
     pub fn start_services(&mut self) {
         if !self.handles.is_none() {
             tracing::warn!("Could not start services, as they're already started!");
@@ -118,6 +123,7 @@ impl Conduit {
         tracing::info!("Communication started.");
     }
 
+    /// Shutdown all of the backend services
     pub fn stop_services(&mut self) {
         if self.handles.is_none() {
             tracing::warn!("Could not stop services as there weren't any active!");
@@ -139,6 +145,7 @@ impl Conduit {
         tracing::info!("Stopped.");
     }
 
+    /// Poll the conduit for any new events. The events are marshalled to Python numpy arrarys.
     pub fn poll_events<'py>(&mut self, py: Python<'py>) -> Option<(u32, &'py PyArray2<i16>)> {
         match self.event_receiver.as_mut() {
             Some(rx) => match rx.try_recv() {
@@ -152,6 +159,7 @@ impl Conduit {
         }
     }
 
+    /// Submit a point cloud to the conduit server.
     pub fn submit_point_cloud(&mut self, cloud_buffer: Vec<u8>) {
         let cloud = PointCloud::new(cloud_buffer);
         match self.cloud_sender.send(cloud) {

@@ -9,7 +9,6 @@ use super::error::PadMapError;
 
 const ENTRIES_PER_LINE: usize = 5; //Number of elements in a single row in the CSV file
 
-/// # HardwareID
 /// HardwareID is a hashable wrapper around the full hardware address (including the pad number).
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct HardwareID {
@@ -46,7 +45,6 @@ fn generate_uuid(cobo_id: &u8, asad_id: &u8, aget_id: &u8, channel_id: &u8) -> u
         + (*cobo_id as u64) * 1_000_000;
 }
 
-/// # PadMap
 /// PadMap contains the mapping of the individual hardware identifiers (CoBo ID, AsAd ID, AGET ID, AGET channel) to AT-TPC pad number.
 /// This can change from experiment to experiment, so PadMap reads in a CSV file where each row contains 5 elements. The first four are the
 /// hardware identifiers (in the order listed previously) and the fifth is the pad number.

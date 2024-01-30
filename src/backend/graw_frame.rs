@@ -72,7 +72,6 @@ fn parse_multiplicity(cursor: &mut Cursor<Vec<u8>>) -> Result<Vec<u16>, GrawFram
     return Ok(mults);
 }
 
-/// # FrameMetadata
 /// FrameMetadata provides the GrawFile a way of querying the event (hardware-level)
 /// information without accessing the entire frame
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -91,7 +90,6 @@ impl From<GrawFrameHeader> for FrameMetadata {
     }
 }
 
-/// # GrawFrameHeader
 /// GrawFrameHeaders contain the full metadata description of the GrawFrame. They are most commonly used to
 /// know how large the total frame size is
 #[derive(Debug, Clone, Default)]
@@ -179,7 +177,6 @@ impl GrawFrameHeader {
     }
 }
 
-/// # GrawFrame
 /// A GrawFrame is the basic data chunk of the .graw format. It contains the data from a AsAd on a CoBo for a specific
 /// event. GrawFrames are sized by 256 bit chunking. The header comprises one 256 bit chunks, and the body can contain several 256 bit chunks.
 /// ## Note

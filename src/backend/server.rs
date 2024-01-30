@@ -1,3 +1,5 @@
+//! This is a basic TCP Server. With the addition of the RerunSDK this is mostly obsolete.
+//! We will keep it for now, in case it becomes useful at some point.
 use std::net::SocketAddr;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;

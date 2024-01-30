@@ -12,6 +12,8 @@ use super::message::ConduitMessage;
 
 const CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
+/// ECCReceiver is an async task which receives data from a modified GETDAQ DataRouter
+/// in the form of GRAW Frames. The frames are then submitted to the EventBuilder.
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct ECCReceiver {
@@ -21,6 +23,7 @@ pub struct ECCReceiver {
 }
 
 impl ECCReceiver {
+    /// Create a receiver at an ip:port
     pub async fn new(
         ip: &str,
         port: &str,
@@ -35,6 +38,7 @@ impl ECCReceiver {
         });
     }
 
+    /// The primary task of the ECCReceiver which is spawned.
     pub async fn run(
         &mut self,
         cancel: &mut broadcast::Receiver<ConduitMessage>,
@@ -49,6 +53,7 @@ impl ECCReceiver {
         }
     }
 
+    /// Read in the raw GETDAQ data and convert it into a GrawFrame
     async fn read_and_send(&mut self) -> Result<(), ECCReceiverError> {
         let mut header_buffer: Vec<u8> =
             vec![0; (EXPECTED_HEADER_SIZE as u32 * SIZE_UNIT) as usize];
@@ -67,6 +72,7 @@ impl ECCReceiver {
     }
 }
 
+/// Helper function to start and spawn all ECCReceivers
 pub fn startup_ecc_recievers(
     rt: &tokio::runtime::Runtime,
     frame_tx: &mpsc::Sender<GrawFrame>,
