@@ -215,7 +215,4 @@ def phase_estimate(
         for cluster in clusters
     ]
 
-    # Toss any failures
-    results = [res for res in results if not res.failed]
-
     return results
