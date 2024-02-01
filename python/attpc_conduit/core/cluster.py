@@ -71,7 +71,9 @@ class Cluster:
         self.label = label
         self.data = data
 
-    def from_labeled_cloud(self, cloud: LabeledCloud, params: ClusterParameters):
+    def from_labeled_cloud(
+        self, cloud: LabeledCloud, params: ClusterParameters
+    ) -> np.ndarray:
         """Convert a LabeledCloud to a Cluster, dropping any outliers
 
         Parameters
@@ -84,7 +86,8 @@ class Cluster:
         self.event = cloud.point_cloud.event_number
         self.label = cloud.label
         self.copy_cloud(cloud.point_cloud)
-        self.drop_outliers(params.n_neighbors_outlier_test)
+        outliers = self.drop_outliers(params.n_neighbors_outlier_test)
+        return outliers
 
     def copy_cloud(self, cloud: PointCloud):
         """Copy PointCloud data to the cluster
@@ -102,7 +105,7 @@ class Cluster:
         self.data[:, :3] = cloud.cloud[:, :3]  # position
         self.data[:, 3] = cloud.cloud[:, 4]  # integrated charge
 
-    def drop_outliers(self, neighbors=2):
+    def drop_outliers(self, neighbors=2) -> np.ndarray:
         """Use scikit-learn LocalOutlierFactor to test the cluster for spatial outliers.
 
         This helps reduce noise when fitting the data.
@@ -118,11 +121,12 @@ class Cluster:
         neigh = LocalOutlierFactor(n_neighbors=neighbors)
         result = neigh.fit_predict(test_data)
         self.data = self.data[result > 0]  # label=-1 is an outlier
+        return np.nonzero(result < 0)[0]
 
 
 def convert_labeled_to_cluster(
     cloud: LabeledCloud, params: ClusterParameters
-) -> Cluster:
+) -> tuple[Cluster, np.ndarray]:
     """Function which takes in a LabeledCloud and ClusterParamters and returns a Cluster
 
     Parameters
@@ -138,5 +142,5 @@ def convert_labeled_to_cluster(
         The Cluster object
     """
     cluster = Cluster()
-    cluster.from_labeled_cloud(cloud, params)
-    return cluster
+    outliers = cluster.from_labeled_cloud(cloud, params)
+    return (cluster, outliers)

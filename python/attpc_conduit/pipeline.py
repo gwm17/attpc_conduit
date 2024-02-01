@@ -4,13 +4,18 @@ from .phase_cluster import phase_cluster
 from .phase_estimate import phase_estimate
 from .core.config import Config
 from .core.pad_map import PadMap
-from .core.circle import generate_circle_points
+from .core.circle import generate_circle_points, N_CIRCLE_POINTS
+from .core.label_colors import get_label_color
 import logging as log
 
 import rerun as rr
 import numpy as np
 
 RADIUS = 2.0
+
+circle_points = np.empty(
+    (N_CIRCLE_POINTS, 3), dtype=np.float32
+)  # Some pre-allocated storage
 
 
 def init_detector_bounds() -> None:
@@ -55,66 +60,82 @@ def run_pipeline(
         The current conduit configuration
     """
     rr.set_time_sequence("event_time", event_id)
-    rr.log("Detector3D/cloud", rr.Clear(recursive=True))
-    rr.log("Detector2D/pad_plane", rr.Clear(recursive=True))
+    rr.log("Detector3D/event", rr.Clear(recursive=True))
+    rr.log("Detector2D/event", rr.Clear(recursive=True))
 
     pc = phase_pointcloud(event_id, event_matrix, pad_map, config.get, config.detector)
     radii = np.full(len(pc.cloud), RADIUS)
     rr.log(
-        f"Detector3D/cloud/point_cloud",
+        f"Detector3D/event/point_cloud",
         rr.Points3D(pc.cloud[:, :3], radii=radii),
     )
     rr.log(
-        f"Detector2D/pad_plane/raw_plane",
+        f"Detector2D/event/raw_plane",
         rr.Points2D(pc.cloud[:, :2], radii=radii),
     )
-    clusters = phase_cluster(pc, config.cluster)
-    if clusters is not None:
+    result = phase_cluster(pc, config.cluster)
+    if result is not None:
+        clusters = result[0]
+        labels = result[1]
+        context = rr.AnnotationContext(
+            [
+                (label, f"cluster_{label}", get_label_color(idx))
+                for idx, label in enumerate(np.unique(labels))
+            ]
+        )
+        radii = np.full(len(pc.cloud), RADIUS)
+        rr.log(
+            "Detector3D/event/clusters",
+            rr.Points3D(pc.cloud[:, :3], radii=radii, class_ids=labels),
+            context,
+        )
+        rr.log(
+            "Detector2D/event/clusters",
+            rr.Points2D(pc.cloud[:, :2], radii=radii, class_ids=labels),
+            context,
+        )
+
         estimates = phase_estimate(clusters, config.estimate, config.detector)
-        for idx, cluster in enumerate(clusters):
-            radii = np.full(len(cluster.data), RADIUS)
+        circles_context = rr.AnnotationContext(
+            [
+                (idx, f"circle_{label}", get_label_color(idx))
+                for idx, label in enumerate(np.unique(labels))
+            ]
+        )
+        rr.log("Detector3D/event/circles", circles_context)
+        rr.log("Detector2D/event/circles", circles_context)
+        for idx, est in enumerate(estimates):
+            if est.failed == True:
+                continue
+            rho = est.brho / config.detector.magnetic_field * 1000.0 * np.sin(est.polar)
+            circle_points[:, :2] = generate_circle_points(
+                est.center[0], est.center[1], rho
+            )
+            circle_points[:, 2] = est.vertex[2]
+            rr.log(
+                f"Detector3D/event/circles/",
+                rr.LineStrips3D(circle_points, radii=RADIUS, class_ids=idx),
+            )
 
             rr.log(
-                f"Detector3D/cloud/cluster_{idx}",
-                rr.Points3D(cluster.data[:, :3], radii=radii),
+                f"Detector2D/event/circles",
+                rr.LineStrips2D(circle_points[:, :2], radii=RADIUS, class_ids=idx),
             )
-            rr.log(
-                f"Detector2D/pad_plane/cluster_{idx}",
-                rr.Points2D(cluster.data[:, :2], radii=radii),
-            )
-            est = estimates[idx]
-            if est.failed == False:
-                rr.log(
-                    f"Detector3D/cloud/cluster_{idx}/vertex",
-                    rr.Points3D(est.vertex, radii=[RADIUS]),
-                )
-                rho = (
-                    est.brho
-                    / config.detector.magnetic_field
-                    * 1000.0
-                    * np.sin(est.polar)
-                )
-                circle = generate_circle_points(est.center[0], est.center[1], rho)
-                radii = np.full(len(circle), RADIUS)
-                rr.log(
-                    f"Detector2D/pad_plane/cluster_{idx}/circle",
-                    rr.Points2D(circle, radii=radii),
-                )
-                grammer.fill_2D("pid", est.dEdx, est.brho)
-                grammer.fill_2D("kinematics", np.rad2deg(est.polar), est.brho)
-                grammer.fill_1D("polar", np.rad2deg(est.polar))
+            grammer.fill_2D("pid", est.dEdx, est.brho)
+            grammer.fill_2D("kinematics", np.rad2deg(est.polar), est.brho)
+            grammer.fill_1D("polar", np.rad2deg(est.polar))
 
-                for gram in grammer.grams_1d.values():
-                    rr.log(
-                        f"Histograms/{gram.name}",
-                        rr.BarChart(gram.counts),
-                    )
+            for gram in grammer.grams_1d.values():
+                rr.log(
+                    f"Histograms/{gram.name}",
+                    rr.BarChart(gram.counts),
+                )
 
-                for gram in grammer.grams_2d.values():
-                    rr.log(
-                        f"Histograms/{gram.name}",
-                        rr.Tensor(
-                            gram.counts,
-                            dim_names=(gram.x_axis_title, gram.y_axis_title),
-                        ),
-                    )
+            for gram in grammer.grams_2d.values():
+                rr.log(
+                    f"Histograms/{gram.name}",
+                    rr.Tensor(
+                        gram.counts,
+                        dim_names=(gram.x_axis_title, gram.y_axis_title),
+                    ),
+                )

@@ -1,5 +1,7 @@
 import numpy as np
 
+N_CIRCLE_POINTS = 10000
+
 
 def generate_circle_points(
     center_x: float, center_y: float, radius: float
@@ -24,7 +26,7 @@ def generate_circle_points(
         and the second column is the y-coordinate of a point on the circle
 
     """
-    theta = np.linspace(0.0, 2.0 * np.pi, 100000)
+    theta = np.linspace(0.0, 2.0 * np.pi, N_CIRCLE_POINTS)
     array = np.zeros(shape=(len(theta), 2))
     array[:, 0] = center_x + np.cos(theta) * radius
     array[:, 1] = center_y + np.sin(theta) * radius

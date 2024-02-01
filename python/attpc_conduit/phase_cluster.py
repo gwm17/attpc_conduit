@@ -6,11 +6,14 @@ from .core.circle import least_squares_circle
 from sklearn.cluster import HDBSCAN
 from sklearn.preprocessing import StandardScaler
 import numpy as np
+import logging
+
+NOISE_LABEL: int = 4096
 
 
 def join_clusters(
-    clusters: list[LabeledCloud], params: ClusterParameters
-) -> list[LabeledCloud]:
+    clusters: list[LabeledCloud], params: ClusterParameters, labels: np.ndarray
+) -> tuple[list[LabeledCloud], np.ndarray]:
     """Join clusters until either only one cluster is left or no clusters meet the criteria to be joined together.
 
     Parameters
@@ -30,14 +33,14 @@ def join_clusters(
     after = 0
     while before != after and len(jclusters) > 1:
         before = len(jclusters)
-        jclusters = join_clusters_step(jclusters, params)
+        jclusters, labels = join_clusters_step(jclusters, params, labels)
         after = len(jclusters)
-    return jclusters
+    return (jclusters, labels)
 
 
 def join_clusters_step(
-    clusters: list[LabeledCloud], params: ClusterParameters
-) -> list[LabeledCloud]:
+    clusters: list[LabeledCloud], params: ClusterParameters, labels: np.ndarray
+) -> tuple[list[LabeledCloud], np.ndarray]:
     """A single step of joining clusters
 
     Combine clusters based on the center around which they orbit. This is necessary because often times tracks are
@@ -57,7 +60,7 @@ def join_clusters_step(
     """
     # Can't join 1 or 0 clusters
     if len(clusters) < 2:
-        return clusters
+        return (clusters, labels)
 
     event_number = clusters[0].point_cloud.event_number
 
@@ -71,14 +74,15 @@ def join_clusters_step(
     # Make a dictionary of center groups
     # First everyone is in their own group
     groups: dict[int, list[int]] = {}
+    group_labels: dict[int, list[int]] = {}
     for idx, cluster in enumerate(clusters):
         groups[cluster.label] = [idx]
-
+        group_labels[cluster.label] = [cluster.label]
     # Now regroup, searching for clusters whose circles mostly overlap
     for idx, center in enumerate(centers):
         cluster = clusters[idx]
         # Reject noise
-        if cluster.label == -1 or np.isnan(center[0]) or center[2] < 10.0:
+        if cluster.label == NOISE_LABEL or np.isnan(center[0]) or center[2] < 10.0:
             continue
         radius: float = float(np.linalg.norm(center[:2]))
         area = np.pi * radius**2.0
@@ -88,7 +92,7 @@ def join_clusters_step(
             comp_radius = float(np.linalg.norm(comp_center[:2]))
             comp_area = np.pi * comp_radius**2.0
             if (
-                comp_cluster.label == -1
+                comp_cluster.label == NOISE_LABEL
                 or np.isnan(comp_center[0])
                 or center[2] < 10.0
                 or cidx == idx
@@ -138,31 +142,41 @@ def join_clusters_step(
                 and (charge_diff < threshold)
             ):
                 comp_group = groups.pop(comp_cluster.label)
+                comp_labels = group_labels.pop(comp_cluster.label)
                 for subs in comp_group:
                     clusters[subs].label = cluster.label
                 groups[cluster.label].extend(comp_group)
+                group_labels[cluster.label].extend(comp_labels)
 
     # Now reform the clouds such that there is one cloud per group
     new_clusters: list[LabeledCloud] = []
     for g in groups.keys():
-        if g == -1:
+        if g == NOISE_LABEL:
             continue
 
         new_cluster = LabeledCloud(g, PointCloud())
         new_cluster.point_cloud.event_number = event_number
-        new_cluster.point_cloud.cloud = np.zeros((0, 7))
+        new_cluster.point_cloud.cloud = np.zeros(
+            (0, len(clusters[0].point_cloud.cloud[0]))
+        )
         for idx in groups[g]:
             new_cluster.point_cloud.cloud = np.concatenate(
                 (new_cluster.point_cloud.cloud, clusters[idx].point_cloud.cloud), axis=0
             )
         new_clusters.append(new_cluster)
 
-    return new_clusters
+    new_labels = labels
+    for g in group_labels.keys():
+        if g == NOISE_LABEL:
+            continue
+        for label in group_labels[g]:
+            new_labels[labels == label] = g
+    return (new_clusters, new_labels)
 
 
 def cleanup_clusters(
-    clusters: list[LabeledCloud], params: ClusterParameters
-) -> list[Cluster]:
+    clusters: list[LabeledCloud], params: ClusterParameters, labels: np.ndarray
+) -> tuple[list[Cluster], np.ndarray]:
     """Converts the LabeledClouds to Clusters and bins the data in z
 
     Parameters
@@ -177,14 +191,21 @@ def cleanup_clusters(
     list[Cluster]
         The cleaned clusters
     """
-    return [
-        convert_labeled_to_cluster(cluster, params)
-        for cluster in clusters
-        if cluster.label != -1
-    ]
+    cleaned = []
+    for cluster in clusters:
+        if cluster.label == NOISE_LABEL:
+            continue
+        cluster, outliers = convert_labeled_to_cluster(cluster, params)
+        cleaned.append(cluster)
+        if len(outliers) == 0 or len(outliers) > len(labels == cluster.label):
+            continue
+        labels[labels == cluster.label][outliers] = NOISE_LABEL
+    return (cleaned, labels)
 
 
-def form_clusters(pc: PointCloud, params: ClusterParameters) -> list[LabeledCloud]:
+def form_clusters(
+    pc: PointCloud, params: ClusterParameters
+) -> tuple[list[LabeledCloud], np.ndarray]:
     """Apply the HDBSCAN clustering algorithm to a PointCloud
 
     Analyze a point cloud, and group the points into clusters which in principle should correspond to particle trajectories. This analysis contains several steps,
@@ -206,7 +227,7 @@ def form_clusters(pc: PointCloud, params: ClusterParameters) -> list[LabeledClou
         List of clusters found by the algorithm with labels
     """
     if len(pc.cloud) < params.min_cloud_size:
-        return []
+        return ([], np.empty(0))
     pc.smooth_cloud(params.smoothing_neighbor_distance)
 
     clusterizer = None
@@ -224,7 +245,7 @@ def form_clusters(pc: PointCloud, params: ClusterParameters) -> list[LabeledClou
             allow_single_cluster=True,
         )
     else:
-        return []
+        return ([], np.empty(0))
 
     # Smooth out the point cloud by averaging over neighboring points within a distance, droping any duplicate points
 
@@ -237,6 +258,7 @@ def form_clusters(pc: PointCloud, params: ClusterParameters) -> list[LabeledClou
     cluster_data = StandardScaler().fit_transform(cluster_data)
 
     fitted_clusters = clusterizer.fit(cluster_data)
+    fitted_clusters.labels_[fitted_clusters.labels_ == -1] = NOISE_LABEL
     labels = np.unique(fitted_clusters.labels_)
 
     # Select out data into clusters
@@ -247,10 +269,12 @@ def form_clusters(pc: PointCloud, params: ClusterParameters) -> list[LabeledClou
         clusters[idx].point_cloud.cloud = pc.cloud[mask]
         clusters[idx].point_cloud.event_number = pc.event_number
 
-    return clusters
+    return (clusters, fitted_clusters.labels_)
 
 
-def phase_cluster(pc: PointCloud, params: ClusterParameters) -> list[Cluster] | None:
+def phase_cluster(
+    pc: PointCloud, params: ClusterParameters
+) -> tuple[list[Cluster], np.ndarray] | None:
     """Convert a point cloud into a set of trajectory clusters
 
     Take the point clouds and break them into clusters which should represent particle trajectories.
@@ -271,14 +295,14 @@ def phase_cluster(pc: PointCloud, params: ClusterParameters) -> list[Cluster] | 
         A list of trajectory clusters. If no valid clusters were found, returns None.
     """
 
-    clusters = form_clusters(pc, params)
+    clusters, labels = form_clusters(pc, params)
     if len(clusters) == 0:
         return None
-    joined = join_clusters(clusters, params)
+    joined, joined_labels = join_clusters(clusters, params, labels)
     if len(joined) == 0:
         return None
-    cleaned = cleanup_clusters(joined, params)
+    cleaned, cleaned_labels = cleanup_clusters(joined, params, joined_labels)
     if len(cleaned) == 0:
         return None
 
-    return cleaned
+    return (cleaned, cleaned_labels)
