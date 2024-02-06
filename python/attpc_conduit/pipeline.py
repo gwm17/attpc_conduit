@@ -1,11 +1,11 @@
 from .plot.histogram import Histogrammer
+from .plot.color import generate_point_colors, get_label_color
 from .phase_pointcloud import phase_pointcloud
 from .phase_cluster import phase_cluster
 from .phase_estimate import phase_estimate
 from .core.config import Config
 from .core.pad_map import PadMap
 from .core.circle import generate_circle_points, N_CIRCLE_POINTS
-from .core.label_colors import get_label_color
 import logging as log
 
 import rerun as rr
@@ -64,14 +64,15 @@ def run_pipeline(
     rr.log("Detector2D/event", rr.Clear(recursive=True))
 
     pc = phase_pointcloud(event_id, event_matrix, pad_map, config.get, config.detector)
+    colors = generate_point_colors(pc.cloud[:, 3])
     radii = np.full(len(pc.cloud), RADIUS)
     rr.log(
         f"Detector3D/event/point_cloud",
-        rr.Points3D(pc.cloud[:, :3], radii=radii),
+        rr.Points3D(pc.cloud[:, :3], radii=radii, colors=colors),
     )
     rr.log(
         f"Detector2D/event/raw_plane",
-        rr.Points2D(pc.cloud[:, :2], radii=radii),
+        rr.Points2D(pc.cloud[:, :2], radii=radii, colors=colors),
     )
     result = phase_cluster(pc, config.cluster)
     if result is not None:
