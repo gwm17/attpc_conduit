@@ -4,7 +4,7 @@ from pathlib import Path
 import rerun as rr  # pip install rerun-sdk
 from .core.pad_map import PadMap
 from .core.config import Config
-from .pipeline import init_detector_bounds, run_pipeline
+from .pipeline import init_detector_bounds, run_pipeline, init_detector_pad_plane
 from .plot.histogram import Histogrammer
 import h5py as h5
 import numpy as np
@@ -103,6 +103,7 @@ def main() -> None:
     rr.stdout()  # Required for custom file loaders
 
     init_detector_bounds()
+    # init_detector_pad_plane(pad_map) Currently doesn't work...
 
     for event_id in range(min_event, max_event):
         event_data = None

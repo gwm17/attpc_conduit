@@ -21,14 +21,37 @@ circle_points = np.empty(
 def init_detector_bounds() -> None:
     """Setup the detector geometry in rerun"""
     # log the pad plane bounds
-    plane = generate_circle_points(0.0, 0.0, 300.0)
-    rr.log("Detector2D/bounds", rr.LineStrips2D(plane), timeless=True)
+    plane = generate_circle_points(0.0, 0.0, 30.0)
+    rr.log(
+        "Detector2D/geometry/bounds",
+        rr.LineStrips2D(plane, draw_order=-1000.0),
+        timeless=True,
+    )
     # log the coordinate orientation for 3D
     rr.log("Detector3D/", rr.ViewCoordinates.RIGHT_HAND_X_UP, timeless=True)
     # log the detector box
     rr.log(
         "Detector3D/detector_box",
         rr.Boxes3D(half_sizes=[300.0, 300.0, 500.0], centers=[0.0, 0.0, 500.0]),
+        timeless=True,
+    )
+
+
+def init_detector_pad_plane(pad_map: PadMap):
+    """Setup the pad plane hardware visualization"""
+    coordinates = np.zeros((len(pad_map.map), 2))
+    labels: list[str] = ["" for _ in pad_map.map.keys()]
+    radii = np.full(len(pad_map.map.keys()), RADIUS)
+    colors = [(1.0, 1.0, 1.0, 0.01) for _ in pad_map.map.keys()]
+    for idx, pad in enumerate(pad_map.map.values()):
+        coordinates[idx, 0] = pad.x
+        coordinates[idx, 1] = pad.y
+        labels[idx] = str(pad.hardware)
+    rr.log(
+        "Detector2D/geometry/pads",
+        rr.Points2D(
+            coordinates, radii=radii, colors=colors, labels=labels, draw_order=-20000.0
+        ),
         timeless=True,
     )
 
@@ -68,11 +91,18 @@ def run_pipeline(
     radii = np.full(len(pc.cloud), RADIUS)
     rr.log(
         f"Detector3D/event/point_cloud",
-        rr.Points3D(pc.cloud[:, :3], radii=radii, colors=colors),
+        rr.Points3D(
+            pc.cloud[:, :3], radii=radii, colors=colors, labels=pc.get_hardware_labels()
+        ),
     )
     rr.log(
         f"Detector2D/event/raw_plane",
-        rr.Points2D(pc.cloud[:, :2], radii=radii, colors=colors),
+        rr.Points2D(
+            pc.cloud[:, :2],
+            radii=radii,
+            colors=colors,
+            labels=pc.get_hardware_labels(),
+        ),
     )
     result = phase_cluster(pc, config.cluster)
     if result is not None:

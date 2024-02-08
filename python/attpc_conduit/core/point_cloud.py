@@ -49,6 +49,7 @@ class PointCloud:
         """
         self.event_number: int = INVALID_EVENT_NUMBER
         self.cloud: np.ndarray = np.empty(0, dtype=np.float64)
+        self.hw_labels: list[str] | None = None
 
     def load_cloud_from_get_event(self, event: GetEvent, pmap: PadMap):
         """Load a point cloud from a GetEvent
@@ -71,6 +72,7 @@ class PointCloud:
         for trace in event.traces:
             count += trace.get_number_of_peaks()
         self.cloud = np.zeros((count, 7))
+        self.hw_labels = []
         idx = 0
         for trace in event.traces:
             if trace.get_number_of_peaks() == 0:
@@ -103,8 +105,11 @@ class PointCloud:
                     peak.centroid + pad.time_offset
                 )  # Time bucket with correction
                 idx += 1
+                self.hw_labels.append(str(trace.hw_id))
 
-    def load_cloud_from_hdf5_data(self, data: np.ndarray, event_number: int):
+    def load_cloud_from_hdf5_data(
+        self, data: np.ndarray, event_number: int, pmap: PadMap
+    ):
         """Load a point cloud from an hdf5 file dataset
 
         Parameters
@@ -116,6 +121,7 @@ class PointCloud:
         """
         self.event_number: int = event_number
         self.cloud = data
+        self.hw_labels = [str(pmap.get_pad_data(row[5]).hardware) for row in data]
 
     def is_valid(self) -> bool:
         """Check if the PointCloud is valid
@@ -137,6 +143,12 @@ class PointCloud:
             An Nx3 array of the spatial data of the PointCloud
         """
         return self.cloud[:, 0:3]
+
+    def get_hardware_labels(self) -> list[str]:
+        if self.hw_labels is not None:
+            return self.hw_labels
+        else:
+            return []
 
     def calibrate_z_position(
         self,
@@ -169,13 +181,16 @@ class PointCloud:
         """Smooth the point cloud by averaging over nearest neighbors by distance, weighted by the integrated charge.
 
         The neighborhood is defined to be a sphere of radius max_distance centered on the point being considered
-        This modifies the underlying point cloud array
+        This modifies the underlying point cloud array.
+
+        Note: in the conduit version, this also destroys the hardware labels, as they have no meaning after smoothing.
 
         Parameters
         ----------
         max_distance: float
             The maximum distance between two neighboring points
         """
+        self.hw_labels = None
         smoothed_cloud = np.zeros(self.cloud.shape)
         for idx, point in enumerate(self.cloud):
             mask = (
@@ -200,3 +215,5 @@ class PointCloud:
         """Sort the internal point cloud array by the z-coordinate"""
         indicies = np.argsort(self.cloud[:, 2])
         self.cloud = self.cloud[indicies]
+        if self.hw_labels is not None:
+            self.hw_labels = [self.hw_labels[index] for index in indicies]
