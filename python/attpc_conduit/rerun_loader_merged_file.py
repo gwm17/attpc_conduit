@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 import rerun as rr  # pip install rerun-sdk
+from .core.conduit_log import init_conduit_logger
 from .core.pad_map import PadMap
 from .core.config import Config
 from .pipeline import init_detector_bounds, run_pipeline, init_detector_pad_plane
@@ -21,6 +22,7 @@ grammer.add_1D("polar", 0.0, 180.0, 180, "polar(deg)")
 ## End histogrammer initialization ##
 
 # handle text logs
+init_conduit_logger()
 logging.getLogger().addHandler(rr.LoggingHandler("logs/handler"))
 logging.getLogger().setLevel(-1)
 logging.info("This INFO log got added through the standard logging interface")

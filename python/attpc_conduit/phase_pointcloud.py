@@ -37,7 +37,6 @@ def phase_pointcloud(
     PointCloud
         The converted, position-calibrated point cloud
     """
-    log.info(f"Converting event {event_number} to a point cloud")
     event = GetEvent(event_matrix, event_number, get_params)
 
     pc = PointCloud()
@@ -49,7 +48,4 @@ def phase_pointcloud(
         detector_params.detector_length,
     )
 
-    log.info(
-        f"Event {event_number} converted to point cloud of size {len(pc.cloud)}",
-    )
     return pc

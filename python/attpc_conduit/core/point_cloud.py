@@ -81,17 +81,13 @@ class PointCloud:
             pid = trace.hw_id.pad_id
             check = pmap.get_pad_from_hardware(trace.hw_id)
             if check is None:
-                # spyral_warn(
-                #     __name__,
-                #     f"When checking pad number of hardware: {trace.hw_id}, recieved None!",
-                # )
                 continue
             if check != pid:
                 pid = check
-
             pad = pmap.get_pad_data(check)
             if pad is None:
                 continue
+
             for peak in trace.get_peaks():
                 self.cloud[idx, 0] = pad.x  # X-coordinate, geometry
                 self.cloud[idx, 1] = pad.y  # Y-coordinate, geometry
@@ -106,6 +102,8 @@ class PointCloud:
                 )  # Time bucket with correction
                 idx += 1
                 self.hw_labels.append(str(trace.hw_id))
+        good_rows = np.flatnonzero(self.cloud[:, 3])  # Non-zero elements only
+        self.cloud = self.cloud[good_rows]
 
     def load_cloud_from_hdf5_data(
         self, data: np.ndarray, event_number: int, pmap: PadMap
@@ -200,7 +198,7 @@ class PointCloud:
             if len(neighbors) < 2:
                 continue
             # Weight points
-            weighted_average = np.average(neighbors, axis=0, weights=neighbors[:, 4])
+            weighted_average = np.average(neighbors, axis=0, weights=neighbors[:, 3])
             if np.isclose(weighted_average[4], 0.0):
                 continue
             smoothed_cloud[idx] = weighted_average

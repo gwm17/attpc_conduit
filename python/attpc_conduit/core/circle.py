@@ -1,6 +1,7 @@
 import numpy as np
 
 N_CIRCLE_POINTS = 10000
+N_CIRCLE_POINTS_RENDER = 50
 
 
 def generate_circle_points(
@@ -33,6 +34,16 @@ def generate_circle_points(
     return array
 
 
+def generate_circle_for_render(
+    center_x: float, center_y: float, radius: float
+) -> np.ndarray:
+    theta = np.linspace(0.0, 2.0 * np.pi, N_CIRCLE_POINTS_RENDER)
+    array = np.zeros(shape=(len(theta), 2))
+    array[:, 0] = center_x + np.cos(theta) * radius
+    array[:, 1] = center_y + np.sin(theta) * radius
+    return array
+
+
 def least_squares_circle(
     x: np.ndarray, y: np.ndarray
 ) -> tuple[float, float, float, float]:
@@ -47,7 +58,8 @@ def least_squares_circle(
     y: ndarray
         list of all y position coordinates to be fit
 
-    ## Returns
+    Returns
+    -------
     tuple[float, float, float, float]
         A four member tuple containing the center x-coordinate, the center y-coordinate, the radius, and the RMSE (in that order)
         These are NaN if the matrix is singular

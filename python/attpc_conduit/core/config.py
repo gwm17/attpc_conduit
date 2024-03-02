@@ -151,30 +151,34 @@ class ClusterParameters:
     big_event_cutoff: int
         the cutoff between big events and small events in units of points in the
         point cloud
-    min_size_big_event: int
-        min_cluster_size parameter in scikit-learn's HDBSCAN algorithm for events with more
-        points than `big_event_cutoff`. The minimum size of a cluster.
-    min_size_small_event: int
-        min_cluster_size parameter in scikit-learn's HDBSCAN algorithm for events with fewer
-        points than `big_event_cutoff`. The minimum size of a cluster.
+    min_size_scale_factor: int
+        Factor which is multiplied by the number of points in a point cloud to set
+        the min_cluster_size parameter in scikit-learn's HDBSCAN algorithm
+    min_size_lower_cutoff: int
+        min_cluster_size parameter in scikit-learn's HDBSCAN algorithm for events where n_points * min_size_scale_factor
+        are less than this value.
+    cluster_selection_epsilon: float
+        cluster_selection_epsilon parameter in scikit-learn's HDBSCAN algorithm. Clusters less than this distance apart
+        are merged in the hierarchy
     circle_overlap_ratio: float
         minimum overlap ratio between two circles in the cluster joining algorithm
     fractional_charge_threshold: float
         The maximum allowed difference between two clusters mean charge (relative to the larger mean charge of the two)
         for them to be joined
-    n_neighbors_outlier_test: int
-        Number of neighbors to use in scikit-learn's LocalOutlierFactor test
+    outlier_scale_factor: float
+        Factor which is multiplied by the number of points in a trajectory to set the number of neighbors parameter
+        for scikit-learns LocalOutlierFactor test
     """
 
     min_cloud_size: int = 50
-    smoothing_neighbor_distance: float = 10.0  # mm
-    min_points: int = 3
-    big_event_cutoff: int = 300
-    min_size_big_event: int = 50
-    min_size_small_event: int = 10
-    circle_overlap_ratio: float = 0.75
-    fractional_charge_threshold: float = 0.75
-    n_neighbors_outlier_test: int = 5
+    smoothing_neighbor_distance: float = 15.0  # mm
+    min_points: int = 5
+    min_size_scale_factor: float = 0.05
+    min_size_lower_cutoff: int = 10
+    cluster_selection_epsilon: float = 0.3
+    circle_overlap_ratio: float = 0.5
+    fractional_charge_threshold: float = 0.85
+    outlier_scale_factor: float = 0.05
 
 
 cluster_param_props: dict[str, ParamProperties] = {
@@ -182,24 +186,26 @@ cluster_param_props: dict[str, ParamProperties] = {
         "Min Cloud Size (points)", 0, 300, 50, ParamType.INT
     ),
     "smoothing_neighbor_distance": ParamProperties(
-        "Smoothing Raidus (mm)", 0.0, 100.0, 10.0, ParamType.FLOAT
+        "Smoothing Raidus (mm)", 0.0, 100.0, 15.0, ParamType.FLOAT
     ),
-    "min_points": ParamProperties("Min Points", 0, 10, 3, ParamType.INT),
-    "big_event_cutoff": ParamProperties(
-        "Big Event Cutoff", 0, 3000, 300, ParamType.INT
+    "min_points": ParamProperties("Min Points", 0, 10, 5, ParamType.INT),
+    "min_size_scale_factor": ParamProperties(
+        "Min Size Scale Factor", 0.0, 0.3, 0.05, ParamType.FLOAT
     ),
-    "min_size_big_event": ParamProperties("Min Size (Big)", 0, 1000, 50, ParamType.INT),
-    "min_size_small_event": ParamProperties(
-        "Min Size (Small)", 0, 1000, 10, ParamType.INT
+    "min_size_lower_cutoff": ParamProperties(
+        "Min Size Lower Limit", 0, 20, 10, ParamType.INT
+    ),
+    "cluster_selection_epsilon": ParamProperties(
+        "Cluster Selection Epsilon", 0.0, 0.5, 0.3, ParamType.FLOAT
     ),
     "circle_overlap_ratio": ParamProperties(
-        "Circle Overlap Ratio", 0.0, 1.0, 0.75, ParamType.FLOAT
+        "Circle Overlap Ratio", 0.0, 1.0, 0.5, ParamType.FLOAT
     ),
     "fractional_charge_threshold": ParamProperties(
-        "Frac. Charge Threshold", 0.0, 3.0, 0.75, ParamType.FLOAT
+        "Frac. Charge Threshold", 0.0, 3.0, 0.85, ParamType.FLOAT
     ),
-    "n_neighbors_outlier_test": ParamProperties(
-        "N Neigh. Outlier Test", 0, 10, 5, ParamType.INT
+    "outlier_scale_factor": ParamProperties(
+        "Outlier Test Scale Factor", 0.0, 1.0, 0.05, ParamType.FLOAT
     ),
 }
 
@@ -212,20 +218,14 @@ class EstimateParameters:
     ----------
     min_total_trajectory_points: int
         minimum number of points in a cluster for the cluster to be considered a particle trajectory
-    max_distance_from_beam_axis: float
-        maximum distance from beam axis for a trajectory vertex to be considered valid
     """
 
     min_total_trajectory_points: int = 50
-    max_distance_from_beam_axis: float = 30.0  # mm
 
 
 estimate_param_props: dict[str, ParamProperties] = {
     "min_total_trajectory_points": ParamProperties(
         "Min Points", 0, 600, 50, ParamType.INT
-    ),
-    "max_distance_from_beam_axis": ParamProperties(
-        "Max Vertex Dist. To Beam Axis", 0.0, 100.0, 30.0, ParamType.FLOAT
     ),
 }
 
@@ -307,24 +307,21 @@ class Config:
             self.cluster.smoothing_neighbor_distance = cluster_params[
                 "smoothing_neighbor_distance"
             ]
-            self.cluster.big_event_cutoff = cluster_params["big_event_cutoff"]
-            self.cluster.min_size_big_event = cluster_params["min_size_big_event"]
-            self.cluster.min_size_small_event = cluster_params["min_size_small_event"]
+            self.cluster.min_size_scale_factor = cluster_params["min_size_scale_factor"]
+            self.cluster.min_size_lower_cutoff = cluster_params["min_size_lower_cutoff"]
+            self.cluster.cluster_selection_epsilon = cluster_params[
+                "cluster_selection_epsilon"
+            ]
             self.cluster.min_points = cluster_params["min_points"]
             self.cluster.circle_overlap_ratio = cluster_params["circle_overlap_ratio"]
             self.cluster.fractional_charge_threshold = cluster_params[
                 "fractional_charge_threshold"
             ]
-            self.cluster.n_neighbors_outlier_test = cluster_params[
-                "n_neighbors_outlier_test"
-            ]
+            self.cluster.outlier_scale_factor = cluster_params["outlier_scale_factor"]
 
             est_params = config_data["Estimate"]
             self.estimate.min_total_trajectory_points = est_params[
                 "min_total_trajectory_points"
-            ]
-            self.estimate.max_distance_from_beam_axis = est_params[
-                "max_distance_from_beam_axis"
             ]
 
     def save(self, path: Path):

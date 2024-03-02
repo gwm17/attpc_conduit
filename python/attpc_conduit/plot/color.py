@@ -1,5 +1,7 @@
-from cmap import Colormap
+from cmap import Colormap, Color
 import numpy as np
+from ..phase_cluster import NOISE_LABEL
+import logging
 
 # Hardcoded for now
 POINT_COLORMAP: Colormap = Colormap("viridis")
@@ -42,6 +44,8 @@ def get_label_color(label: int) -> tuple[float, float, float, float]:
         The sRGBA value
     """
     color_label = label
-    if color_label > 9:
+    if color_label == NOISE_LABEL:
+        return Color("grey").rgba
+    elif color_label > 9:
         color_label %= 9
     return LABEL_COLORMAP(label).rgba

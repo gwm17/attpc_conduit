@@ -3,8 +3,8 @@ from .core.point_cloud import PointCloud
 from .core.cluster import LabeledCloud, Cluster, convert_labeled_to_cluster
 from .core.circle import least_squares_circle
 
-from sklearn.cluster import HDBSCAN
-from sklearn.preprocessing import StandardScaler
+import sklearn.cluster as skcluster
+from sklearn.preprocessing import RobustScaler
 import numpy as np
 import logging
 
@@ -84,12 +84,12 @@ def join_clusters_step(
         # Reject noise
         if cluster.label == NOISE_LABEL or np.isnan(center[0]) or center[2] < 10.0:
             continue
-        radius: float = float(np.linalg.norm(center[:2]))
+        radius: float = center[2]
         area = np.pi * radius**2.0
 
         for cidx, comp_cluster in enumerate(clusters):
             comp_center = centers[cidx]
-            comp_radius = float(np.linalg.norm(comp_center[:2]))
+            comp_radius = comp_center[2]
             comp_area = np.pi * comp_radius**2.0
             if (
                 comp_cluster.label == NOISE_LABEL
@@ -111,23 +111,30 @@ def join_clusters_step(
             term2 = (center_distance**2.0 + comp_radius**2.0 - radius**2.0) / (
                 2.0 * center_distance * comp_radius
             )
-            term3 = (
-                (-center_distance + radius + comp_radius)
-                * (center_distance + radius - comp_radius)
-                * (center_distance - radius + comp_radius)
-                * (center_distance + radius + comp_radius)
-            )
-            if term3 < 0.0:  # term3 cant be negative, inside sqrt
+            c1 = -center_distance + radius + comp_radius
+            c2 = center_distance + radius - comp_radius
+            c3 = center_distance - radius + comp_radius
+            c4 = center_distance + radius + comp_radius
+            term3 = c1 * c2 * c3 * c4
+            area_overlap = 0.0
+            # term3 cant be negative, inside sqrt.
+            if term3 < 0.0 and c1 < 0.0:
+                # Cannot possibly overlap, too far apart
                 continue
-            term1 = min(
-                1.0, max(-1.0, term1)
-            )  # clamp to arccos range to avoid silly floating point precision errors
-            term2 = min(1.0, max(-1.0, term2))
-            area_overlap = (
-                radius**2.0 * np.arccos(term1)
-                + comp_radius**2.0 * np.arccos(term2)
-                - 0.5 * np.sqrt(term3)
-            )
+            elif term3 < 0.0 and (c2 < 0.0 or c3 < 0.0):
+                # Entirely overlap one circle inside of the other
+                area_overlap = min(area, comp_area)
+            else:
+                # Circles only somewhat overlap
+                term1 = min(
+                    1.0, max(-1.0, term1)
+                )  # clamp to arccos range to avoid silly floating point precision errors
+                term2 = min(1.0, max(-1.0, term2))
+                area_overlap = (
+                    radius**2.0 * np.arccos(term1)
+                    + comp_radius**2.0 * np.arccos(term2)
+                    - 0.5 * np.sqrt(term3)
+                )
 
             smaller_area = min(area, comp_area)
             comp_mean_charge = np.mean(comp_cluster.point_cloud.cloud[:, 4], axis=0)
@@ -154,7 +161,7 @@ def join_clusters_step(
         if g == NOISE_LABEL:
             continue
 
-        new_cluster = LabeledCloud(g, PointCloud())
+        new_cluster = LabeledCloud(g, PointCloud(), np.zeros(0))
         new_cluster.point_cloud.event_number = event_number
         new_cluster.point_cloud.cloud = np.zeros(
             (0, len(clusters[0].point_cloud.cloud[0]))
@@ -162,6 +169,9 @@ def join_clusters_step(
         for idx in groups[g]:
             new_cluster.point_cloud.cloud = np.concatenate(
                 (new_cluster.point_cloud.cloud, clusters[idx].point_cloud.cloud), axis=0
+            )
+            new_cluster.parent_indicies = np.concatenate(
+                (new_cluster.parent_indicies, clusters[idx].parent_indicies), axis=0
             )
         new_clusters.append(new_cluster)
 
@@ -193,13 +203,14 @@ def cleanup_clusters(
     """
     cleaned = []
     for cluster in clusters:
-        if cluster.label == NOISE_LABEL:
+        if cluster.label == NOISE_LABEL or len(cluster.point_cloud.cloud) < 2:
             continue
-        cluster, outliers = convert_labeled_to_cluster(cluster, params)
-        cleaned.append(cluster)
-        if len(outliers) == 0 or len(outliers) > len(labels == cluster.label):
+        cleaned_cluster, outliers = convert_labeled_to_cluster(cluster, params)
+        cleaned.append(cleaned_cluster)
+        if len(outliers) == 0:
             continue
-        labels[labels == cluster.label][outliers] = NOISE_LABEL
+        indicies = (cluster.parent_indicies[outliers]).astype(dtype=np.int32)
+        labels[indicies] = NOISE_LABEL
     return (cleaned, labels)
 
 
@@ -226,38 +237,31 @@ def form_clusters(
     list[LabeledCloud]
         List of clusters found by the algorithm with labels
     """
+
+    pc.smooth_cloud(params.smoothing_neighbor_distance)
     if len(pc.cloud) < params.min_cloud_size:
         return ([], np.empty(0))
-    pc.smooth_cloud(params.smoothing_neighbor_distance)
 
-    clusterizer = None
     n_points = len(pc.cloud)
-    if n_points > params.big_event_cutoff:
-        clusterizer = HDBSCAN(
-            min_cluster_size=params.min_size_big_event,
-            min_samples=params.min_points,
-            allow_single_cluster=True,
-        )
-    elif n_points > params.min_size_small_event:
-        clusterizer = HDBSCAN(
-            min_cluster_size=params.min_size_small_event,
-            min_samples=params.min_points,
-            allow_single_cluster=True,
-        )
-    else:
-        return ([], np.empty(0))
-
-    # Smooth out the point cloud by averaging over neighboring points within a distance, droping any duplicate points
+    min_size = int(params.min_size_scale_factor * n_points)
+    if min_size < params.min_size_lower_cutoff:
+        min_size = params.min_size_lower_cutoff
 
     # Use spatial dimensions and integrated charge
     cluster_data = np.empty(shape=(len(pc.cloud), 4))
-    cluster_data[:, :3] = pc.cloud[:, :3]
-    cluster_data[:, 3] = pc.cloud[:, 4]
+    cluster_data[:, :] = pc.cloud[:, :4]
 
-    # Unfiy feature ranges to their means and std deviations. StandardScaler calculates mean, and std for each feature
-    cluster_data = StandardScaler().fit_transform(cluster_data)
+    # Unfiy feature ranges to their means and have standard variance (1)
+    cluster_data = RobustScaler().fit_transform(cluster_data)
 
+    clusterizer = skcluster.HDBSCAN(
+        min_cluster_size=min_size,
+        min_samples=params.min_points,
+        allow_single_cluster=True,
+        cluster_selection_epsilon=params.cluster_selection_epsilon,
+    )
     fitted_clusters = clusterizer.fit(cluster_data)
+
     fitted_clusters.labels_[fitted_clusters.labels_ == -1] = NOISE_LABEL
     labels = np.unique(fitted_clusters.labels_)
 
@@ -268,6 +272,7 @@ def form_clusters(
         mask = fitted_clusters.labels_ == label
         clusters[idx].point_cloud.cloud = pc.cloud[mask]
         clusters[idx].point_cloud.event_number = pc.event_number
+        clusters[idx].parent_indicies = np.flatnonzero(mask)
 
     return (clusters, fitted_clusters.labels_)
 

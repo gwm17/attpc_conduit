@@ -19,6 +19,7 @@ class LabeledCloud:
 
     label: int = -1  # default is noise label
     point_cloud: PointCloud = field(default_factory=PointCloud)
+    parent_indicies: np.ndarray = field(default_factory=lambda: np.empty(0))
 
 
 class Cluster:
@@ -86,7 +87,7 @@ class Cluster:
         self.event = cloud.point_cloud.event_number
         self.label = cloud.label
         self.copy_cloud(cloud.point_cloud)
-        outliers = self.drop_outliers(params.n_neighbors_outlier_test)
+        outliers = self.drop_outliers(params.outlier_scale_factor)
         return outliers
 
     def copy_cloud(self, cloud: PointCloud):
@@ -105,7 +106,7 @@ class Cluster:
         self.data[:, :3] = cloud.cloud[:, :3]  # position
         self.data[:, 3] = cloud.cloud[:, 4]  # integrated charge
 
-    def drop_outliers(self, neighbors=2) -> np.ndarray:
+    def drop_outliers(self, scale: float) -> np.ndarray:
         """Use scikit-learn LocalOutlierFactor to test the cluster for spatial outliers.
 
         This helps reduce noise when fitting the data.
@@ -115,8 +116,9 @@ class Cluster:
         neighbors: int
             The number of neighbors to compare to for the outlier test (default=2)
         """
-        if len(self.data) < neighbors:
-            print(f"Bad: {self.event}")
+        neighbors = int(len(self.data) * scale)
+        if neighbors < 2:
+            neighbors = 2
         test_data = self.data[:, :3].copy()
         neigh = LocalOutlierFactor(n_neighbors=neighbors)
         result = neigh.fit_predict(test_data)
