@@ -5,10 +5,10 @@ import rerun as rr  # pip install rerun-sdk
 from .core.conduit_log import init_conduit_logger
 from .core.pad_map import PadMap
 from .core.config import Config
+from .core.blueprint import generate_default_blueprint
 from .pipeline import init_detector_bounds, run_pipeline, init_detector_pad_plane
 from .plot.histogram import Histogrammer
 import h5py as h5
-import numpy as np
 import logging
 
 RADIUS = 2.0
@@ -101,8 +101,12 @@ def main() -> None:
         file.close()
         exit(rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE)
 
-    rr.init("attpc_h5_data", recording_id=args.recording_id)
-    rr.stdout()  # Required for custom file loaders
+    rr.init(
+        "attpc_h5_data",
+        recording_id=args.recording_id,
+    )
+    rr.send_blueprint(generate_default_blueprint(), make_active=True, make_default=True)
+    rr.stdout()  # type: ignore  # Required for custom file loaders
 
     init_detector_bounds()
     # init_detector_pad_plane(pad_map) Currently doesn't work...
