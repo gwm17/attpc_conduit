@@ -1,13 +1,21 @@
-from dataclasses import dataclass
 from pathlib import Path
 import json
 from enum import Enum
 from typing import TypeVar, Generic
+from spyral import (
+    PadParameters,
+    GetParameters,
+    DetectorParameters,
+    ClusterParameters,
+    EstimateParameters,
+    INVALID_PATH,
+)
 
 
 class ParamType(Enum):
     FLOAT = 0
     INT = 1
+    UNUSED = 2
 
 
 # This is a generic type alias used for param properties
@@ -35,38 +43,6 @@ class ParamProperties(Generic[T]):
         self.type = ptype
 
 
-@dataclass
-class DetectorParameters:
-    """Parameters describing the detector configuration
-
-    Attributes
-    ----------
-    magnetic_field: float
-        The magnitude of the magnetic field in Tesla
-    electric_field: float
-        The magnitude of the electric field in V/m
-    detector_length: float
-        The detector length in mm
-    beam_region_radius: float
-        The beam region radius in mm
-    micromegas_time_bucket: float
-        The micromegas time reference in GET time buckets
-    window_time_bucket: float
-        The window time reference in GET time buckets
-    get_frequency: float
-        The GET DAQ sampling frequency in MHz. Typically 3.125 or 6.25
-
-    """
-
-    magnetic_field: float = 3.0  # Tesla
-    electric_field: float = 45000.0  # V/m
-    detector_length: float = 1000.0  # mm
-    beam_region_radius: float = 30.0  # mm
-    micromegas_time_bucket: float = 40.0
-    window_time_bucket: float = 420.0
-    get_frequency: float = 3.125  # MHz
-
-
 detector_param_props: dict[str, ParamProperties] = {
     "magnetic_field": ParamProperties(
         "Magnetic Field (T)", 0.0, 6.0, 3.0, ParamType.FLOAT
@@ -89,32 +65,13 @@ detector_param_props: dict[str, ParamProperties] = {
     "get_frequency": ParamProperties(
         "GET Freq. (MHz)", 0.0, 6.25, 3.125, ParamType.FLOAT
     ),
+    "garfield_file_path": ParamProperties(
+        "Gafield File", 0.0, 1.0, "bleh", ParamType.UNUSED
+    ),
+    "do_garfield_correction": ParamProperties(
+        "Apply Gafield File", 0.0, 1.0, False, ParamType.UNUSED
+    ),
 }
-
-
-@dataclass
-class GetParameters:
-    """Parameters for GET trace signal analysis
-
-    Attributes
-    ----------
-    baseline_window_scale: float
-        The scale factor for the basline correction algorithm
-    peak_separation: float
-        The peak separation parameter used in scipy.signal.find_peaks
-    peak_prominence: float
-        The peak prominence parameter used in scipy.signal.find_peaks
-    peak_max_width: float
-        The maximum peak width parameter used in scipy.signal.find_peaks
-    peak_threshold: float
-        The minimum amplitude of a valid peak
-    """
-
-    baseline_window_scale: float = 20.0
-    peak_separation: float = 50.0
-    peak_prominence: float = 20.0
-    peak_max_width: float = 100.0
-    peak_threshold: float = 25.0
 
 
 get_param_props: dict[str, ParamProperties] = {
@@ -136,59 +93,11 @@ get_param_props: dict[str, ParamProperties] = {
 }
 
 
-@dataclass
-class ClusterParameters:
-    """Parameters for clustering, cluster joining, and cluster cleaning
-
-    Attributes
-    ----------
-    min_cloud_size: int
-        The minimum size for a point cloud to be clustered
-    smoothing_neighbor_distance: float
-        Size of neighborhood radius in mm for smoothing
-    min_points: int
-        min_samples parameter in scikit-learns' HDBSCAN algorithm
-    big_event_cutoff: int
-        the cutoff between big events and small events in units of points in the
-        point cloud
-    min_size_scale_factor: int
-        Factor which is multiplied by the number of points in a point cloud to set
-        the min_cluster_size parameter in scikit-learn's HDBSCAN algorithm
-    min_size_lower_cutoff: int
-        min_cluster_size parameter in scikit-learn's HDBSCAN algorithm for events where n_points * min_size_scale_factor
-        are less than this value.
-    cluster_selection_epsilon: float
-        cluster_selection_epsilon parameter in scikit-learn's HDBSCAN algorithm. Clusters less than this distance apart
-        are merged in the hierarchy
-    circle_overlap_ratio: float
-        minimum overlap ratio between two circles in the cluster joining algorithm
-    fractional_charge_threshold: float
-        The maximum allowed difference between two clusters mean charge (relative to the larger mean charge of the two)
-        for them to be joined
-    outlier_scale_factor: float
-        Factor which is multiplied by the number of points in a trajectory to set the number of neighbors parameter
-        for scikit-learns LocalOutlierFactor test
-    """
-
-    min_cloud_size: int = 50
-    smoothing_neighbor_distance: float = 15.0  # mm
-    min_points: int = 5
-    min_size_scale_factor: float = 0.05
-    min_size_lower_cutoff: int = 10
-    cluster_selection_epsilon: float = 0.3
-    circle_overlap_ratio: float = 0.5
-    fractional_charge_threshold: float = 0.85
-    outlier_scale_factor: float = 0.05
-
-
 cluster_param_props: dict[str, ParamProperties] = {
     "min_cloud_size": ParamProperties(
         "Min Cloud Size (points)", 0, 300, 50, ParamType.INT
     ),
-    "smoothing_neighbor_distance": ParamProperties(
-        "Smoothing Raidus (mm)", 0.0, 100.0, 15.0, ParamType.FLOAT
-    ),
-    "min_points": ParamProperties("Min Points", 0, 10, 5, ParamType.INT),
+    "min_points": ParamProperties("Min Points", 0, 10, 3, ParamType.INT),
     "min_size_scale_factor": ParamProperties(
         "Min Size Scale Factor", 0.0, 0.3, 0.05, ParamType.FLOAT
     ),
@@ -196,13 +105,13 @@ cluster_param_props: dict[str, ParamProperties] = {
         "Min Size Lower Limit", 0, 20, 10, ParamType.INT
     ),
     "cluster_selection_epsilon": ParamProperties(
-        "Cluster Selection Epsilon", 0.0, 0.5, 0.3, ParamType.FLOAT
+        "Cluster Selection Epsilon", 0.0, 30.0, 10.0, ParamType.FLOAT
     ),
     "circle_overlap_ratio": ParamProperties(
         "Circle Overlap Ratio", 0.0, 1.0, 0.5, ParamType.FLOAT
     ),
     "fractional_charge_threshold": ParamProperties(
-        "Frac. Charge Threshold", 0.0, 3.0, 0.85, ParamType.FLOAT
+        "Frac. Charge Threshold", 0.0, 3.0, 0.8, ParamType.FLOAT
     ),
     "outlier_scale_factor": ParamProperties(
         "Outlier Test Scale Factor", 0.0, 1.0, 0.05, ParamType.FLOAT
@@ -210,22 +119,12 @@ cluster_param_props: dict[str, ParamProperties] = {
 }
 
 
-@dataclass
-class EstimateParameters:
-    """Parameters for physics estimation
-
-    Attributes
-    ----------
-    min_total_trajectory_points: int
-        minimum number of points in a cluster for the cluster to be considered a particle trajectory
-    """
-
-    min_total_trajectory_points: int = 50
-
-
 estimate_param_props: dict[str, ParamProperties] = {
     "min_total_trajectory_points": ParamProperties(
         "Min Points", 0, 600, 50, ParamType.INT
+    ),
+    "smoothing_factor": ParamProperties(
+        "Smoothing", 0.0, 500.0, 100.0, ParamType.FLOAT
     ),
 }
 
@@ -268,10 +167,47 @@ class Config:
         Config:
             The Config object
         """
-        self.detector = DetectorParameters()
-        self.get = GetParameters()
-        self.cluster = ClusterParameters()
-        self.estimate = EstimateParameters()
+        # Idk how to switch this yet
+        self.pads = PadParameters(
+            is_default=True,
+            is_default_legacy=False,
+            pad_gain_path=INVALID_PATH,
+            pad_geometry_path=INVALID_PATH,
+            pad_time_path=INVALID_PATH,
+            pad_electronics_path=INVALID_PATH,
+            pad_scale_path=INVALID_PATH,
+        )
+        self.detector = DetectorParameters(
+            magnetic_field=3.0,
+            electric_field=45000.0,
+            detector_length=1000.0,
+            beam_region_radius=30.0,
+            micromegas_time_bucket=10,
+            window_time_bucket=560,
+            get_frequency=6.25,
+            garfield_file_path=INVALID_PATH,
+            do_garfield_correction=False,
+        )
+        self.get = GetParameters(
+            baseline_window_scale=20.0,
+            peak_separation=50.0,
+            peak_prominence=20.0,
+            peak_max_width=100.0,
+            peak_threshold=25.0,
+        )
+        self.cluster = ClusterParameters(
+            min_cloud_size=50,
+            min_points=3,
+            min_size_scale_factor=0.05,
+            min_size_lower_cutoff=10,
+            cluster_selection_epsilon=10.0,
+            circle_overlap_ratio=0.5,
+            fractional_charge_threshold=0.8,
+            outlier_scale_factor=0.5,
+        )
+        self.estimate = EstimateParameters(
+            min_total_trajectory_points=30, smoothing_factor=100.0
+        )
 
         if path is not None:
             self.load(path)
@@ -287,42 +223,17 @@ class Config:
         with open(path, "r") as config_file:
             config_data = json.load(config_file)
             det_params = config_data["Detector"]
-            self.detector.magnetic_field = det_params["magnetic_field"]
-            self.detector.electric_field = det_params["electric_field"]
-            self.detector.detector_length = det_params["detector_length"]
-            self.detector.beam_region_radius = det_params["beam_region_radius"]
-            self.detector.micromegas_time_bucket = det_params["micromegas_time_bucket"]
-            self.detector.window_time_bucket = det_params["window_time_bucket"]
-            self.detector.get_frequency = det_params["get_frequency"]
-
+            for key in det_params.keys():
+                self.detector.__dict__[key] = det_params[key]
             get_params = config_data["GET"]
-            self.get.baseline_window_scale = get_params["baseline_window_scale"]
-            self.get.peak_separation = get_params["peak_separation"]
-            self.get.peak_prominence = get_params["peak_prominence"]
-            self.get.peak_max_width = get_params["peak_max_width"]
-            self.get.peak_threshold = get_params["peak_threshold"]
-
+            for key in get_params.keys():
+                self.get.__dict__[key] = get_params[key]
             cluster_params = config_data["Cluster"]
-            self.cluster.min_cloud_size = cluster_params["min_cloud_size"]
-            self.cluster.smoothing_neighbor_distance = cluster_params[
-                "smoothing_neighbor_distance"
-            ]
-            self.cluster.min_size_scale_factor = cluster_params["min_size_scale_factor"]
-            self.cluster.min_size_lower_cutoff = cluster_params["min_size_lower_cutoff"]
-            self.cluster.cluster_selection_epsilon = cluster_params[
-                "cluster_selection_epsilon"
-            ]
-            self.cluster.min_points = cluster_params["min_points"]
-            self.cluster.circle_overlap_ratio = cluster_params["circle_overlap_ratio"]
-            self.cluster.fractional_charge_threshold = cluster_params[
-                "fractional_charge_threshold"
-            ]
-            self.cluster.outlier_scale_factor = cluster_params["outlier_scale_factor"]
-
+            for key in cluster_params.keys():
+                self.cluster.__dict__[key] = cluster_params[key]
             est_params = config_data["Estimate"]
-            self.estimate.min_total_trajectory_points = est_params[
-                "min_total_trajectory_points"
-            ]
+            for key in est_params.keys():
+                self.estimate.__dict__[key] = est_params[key]
 
     def save(self, path: Path):
         with open(path, "w") as json_file:

@@ -1,4 +1,3 @@
-from .core.pad_map import PAD_ELEC_PATH, PadMap
 from .core.config import (
     Config,
     detector_param_props,
@@ -8,9 +7,12 @@ from .core.config import (
     ParamType,
 )
 from . import Conduit, init_conduit_logger
-from .pipeline import init_detector_bounds, run_pipeline
-from .plot.histogram import Histogrammer
+from .pipeline import init_detector_bounds, ConduitPipeline
+from .phases import PointcloudPhase, EstimationPhase, ClusterPhase
+from .core.static import PAD_ELEC_PATH
+from .core.blueprint import generate_default_blueprint
 
+from spyral_utils.plot import Histogrammer
 import dearpygui.dearpygui as dpg
 import logging as log
 import rerun as rr
@@ -27,20 +29,33 @@ RADIUS = 2.0
 
 init_conduit_logger()  # initialize Rust logging
 rr.init("attpc_conduit_data", spawn=True)  # initialize Rerun
+
+rr.send_blueprint(generate_default_blueprint())
+
 # handle text logs
 logging.getLogger().addHandler(rr.LoggingHandler("logs/handler"))
-logging.getLogger().setLevel(-1)
+logging.getLogger().setLevel(logging.INFO)
 logging.info("This INFO log got added through the standard logging interface")
 
 # Create conduit and friends
-conduit = Conduit(PAD_ELEC_PATH)
+conduit: Conduit
+with PAD_ELEC_PATH as path:
+    conduit = Conduit(path)
 config = Config()
-pad_map = PadMap()
 grammer = Histogrammer()
+rng = np.random.default_rng()
+pipeline = ConduitPipeline(
+    [
+        PointcloudPhase(config.get, config.detector, config.pads),
+        ClusterPhase(config.cluster, config.detector),
+        EstimationPhase(config.estimate, config.detector),
+    ]
+)
 
 # Add some histograms
-grammer.add_2D("pid", 0.0, 5.0e3, 512, "dE/dx", 0.0, 3.0, 512, "Brho(Tm)")
-grammer.add_2D("kinematics", 0.0, 180.0, 180, "Polar(deg)", 0.0, 3.0, 512, "Brho(Tm)")
+grammer.add_hist2d("particle_id", (512, 512), ((0.0, 5.0e3), (0.0, 3.0)))
+grammer.add_hist2d("kinematics", (180, 512), ((0.0, 180.0), (0.0, 3.0)))
+grammer.add_hist1d("polar", 180, (0.0, 180.0))
 
 # Setup detector bounds in rerun
 init_detector_bounds()
@@ -169,6 +184,8 @@ def create_detector_sliders():
                     callback=detector_field_callback,
                     tag=key,
                 )
+            case ParamType.UNUSED:
+                pass
 
 
 def create_get_sliders():
@@ -195,6 +212,8 @@ def create_get_sliders():
                     callback=get_field_callback,
                     tag=key,
                 )
+            case ParamType.UNUSED:
+                pass
 
 
 def create_cluster_sliders():
@@ -221,6 +240,8 @@ def create_cluster_sliders():
                     callback=cluster_field_callback,
                     tag=key,
                 )
+            case ParamType.UNUSED:
+                pass
 
 
 def create_estimate_sliders():
@@ -247,6 +268,8 @@ def create_estimate_sliders():
                     callback=estimate_field_callback,
                     tag=key,
                 )
+            case ParamType.UNUSED:
+                pass
 
 
 ## Setup DearPyGui ##
@@ -331,7 +354,7 @@ def main():
         event = conduit.poll_events()  # Poll the conduit
         ## Do analysis here...
         if event is not None:
-            run_pipeline(event[0], event[1], grammer, pad_map, config)
+            pipeline.run(event[0], event[1], grammer, rng)
         ## Will also call out to set UI values to update status
         dpg.render_dearpygui_frame()
 

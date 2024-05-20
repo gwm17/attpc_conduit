@@ -1,6 +1,6 @@
 from cmap import Colormap, Color
 import numpy as np
-from ..phase_cluster import NOISE_LABEL
+from .static import NOISE_LABEL
 import logging
 
 # Hardcoded for now
