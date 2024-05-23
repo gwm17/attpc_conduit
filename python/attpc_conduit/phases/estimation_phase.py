@@ -99,7 +99,7 @@ class EstimationPhase(PhaseLike):
         # Log circles if they exist
         n_circles = len(result.artifact["event"])
         circle_block_data = np.zeros((n_circles, N_CIRCLE_POINTS_RENDER, 3))
-        labels = [a.label for a in payload.artifact]
+        used_labels = []
         for ridx in range(n_circles):
             rho = (
                 result.artifact["brho"][ridx]
@@ -121,10 +121,11 @@ class EstimationPhase(PhaseLike):
                     for polar in CIRCLE_POLARS
                 ]
             )
+            used_labels.append(result.artifact["cluster_label"][ridx])
         rr.log(
             "/event/circles",
             rr.LineStrips3D(
-                circle_block_data, radii=RADIUS, colors=None, class_ids=labels
+                circle_block_data, radii=RADIUS, colors=None, class_ids=used_labels
             ),
         )
 

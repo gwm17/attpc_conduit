@@ -1,13 +1,21 @@
 from ..core.phase import PhaseLike, PhaseResult
 from ..core.color import get_label_color
+from ..core.static import RADIUS, UNSIGNED_NOISE_LABEL
 from spyral.core.config import ClusterParameters, DetectorParameters
 from spyral.core.status_message import StatusMessage
 from spyral.core.point_cloud import PointCloud
-from spyral.core.clusterize import form_clusters, join_clusters, cleanup_clusters
+from spyral.core.clusterize import (
+    form_clusters,
+    join_clusters,
+    cleanup_clusters,
+    NOISE_LABEL,
+)
 
 from numpy.random import Generator
 from spyral_utils.plot import Histogrammer
 import rerun as rr
+
+from logging import warn
 
 
 class ClusterPhase(PhaseLike):
@@ -53,22 +61,29 @@ class ClusterPhase(PhaseLike):
         if not payload.successful:
             result.successful = False
             return result
-        clusters = form_clusters(payload.artifact, self.cluster_params)
-        joined = join_clusters(clusters, self.cluster_params)
-        result.artifact = cleanup_clusters(joined, self.cluster_params)
+
+        clusters, labels = form_clusters(payload.artifact, self.cluster_params)
+        joined, labels = join_clusters(clusters, self.cluster_params, labels)
+        result.artifact, labels = cleanup_clusters(joined, self.cluster_params, labels)
         if len(result.artifact) == 0:
             result.successful = False
             return result
-        # For now we don't log clusters... Need to make Spyral more online friendly here
-        # This will also need to change a bit, I guess maybe? Probably would like to include noise...
-        labels = [c.label for c in result.artifact]
+        unique_labels = [c.label for c in result.artifact]
+        unique_labels.append(UNSIGNED_NOISE_LABEL)
+
+        labels[labels == NOISE_LABEL] = UNSIGNED_NOISE_LABEL
+
         rr.log(
             "/event",
             rr.AnnotationContext(
                 [
                     (label, f"cluster_{label}", get_label_color(label))
-                    for label in labels
+                    for label in unique_labels
                 ]
             ),
+        )
+        rr.log(
+            "/event/clusters",
+            rr.Points3D(payload.artifact.cloud[:, :3], radii=RADIUS, class_ids=labels),
         )
         return result

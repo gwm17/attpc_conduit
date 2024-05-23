@@ -1,6 +1,6 @@
 from cmap import Colormap, Color
 import numpy as np
-from .static import NOISE_LABEL
+from .static import UNSIGNED_NOISE_LABEL
 import logging
 
 # Hardcoded for now
@@ -44,7 +44,7 @@ def get_label_color(label: int) -> tuple[float, float, float, float]:
         The sRGBA value
     """
     color_label = label
-    if color_label == NOISE_LABEL:
+    if color_label == UNSIGNED_NOISE_LABEL:
         return Color("grey").rgba
     elif color_label > 9:
         color_label %= 9

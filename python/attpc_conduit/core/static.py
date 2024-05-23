@@ -1,7 +1,7 @@
 import numpy as np
 from importlib.resources import files, as_file
 
-NOISE_LABEL = -1
+UNSIGNED_NOISE_LABEL = 4096
 
 N_CIRCLE_POINTS_RENDER = 100
 

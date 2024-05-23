@@ -110,9 +110,6 @@ cluster_param_props: dict[str, ParamProperties] = {
     "circle_overlap_ratio": ParamProperties(
         "Circle Overlap Ratio", 0.0, 1.0, 0.5, ParamType.FLOAT
     ),
-    "fractional_charge_threshold": ParamProperties(
-        "Frac. Charge Threshold", 0.0, 3.0, 0.8, ParamType.FLOAT
-    ),
     "outlier_scale_factor": ParamProperties(
         "Outlier Test Scale Factor", 0.0, 1.0, 0.05, ParamType.FLOAT
     ),
@@ -202,7 +199,6 @@ class Config:
             min_size_lower_cutoff=10,
             cluster_selection_epsilon=10.0,
             circle_overlap_ratio=0.5,
-            fractional_charge_threshold=0.8,
             outlier_scale_factor=0.5,
         )
         self.estimate = EstimateParameters(
