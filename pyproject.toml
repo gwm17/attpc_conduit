@@ -14,9 +14,9 @@ dynamic = ["version"]
 dependencies = [
 	"cmap>=0.1.3",
     "dearpygui>=1.10",
-    "rerun-sdk>=0.16.0",
+    "rerun-sdk>=0.16.1",
     "h5py>=3.10",
-    "attpc_spyral>=0.7.0"
+    "attpc_spyral>=0.8.0"
 ]
 
 [project.scripts]
