@@ -73,3 +73,6 @@ docs/_build/
 
 #JSON
 *.json
+
+# HDF5
+*.h5
