@@ -5,7 +5,9 @@ use tokio::sync::{broadcast, mpsc};
 use tokio::task::JoinHandle;
 use tokio::time::timeout;
 
-use super::constants::{EXPECTED_HEADER_SIZE, NUMBER_OF_COBOS, SIZE_UNIT};
+use super::constants::{
+    EXPECTED_HEADER_SIZE, EXPORTER_PORT, MM_IP_SUBNET, NUMBER_OF_COBOS, SIZE_UNIT,
+};
 use super::error::ECCReceiverError;
 use super::graw_frame::{GrawFrame, GrawFrameHeader};
 use super::message::ConduitMessage;
@@ -80,12 +82,12 @@ pub fn startup_ecc_recievers(
 ) -> Vec<JoinHandle<()>> {
     let mut handles: Vec<JoinHandle<()>> = vec![];
 
-    for _ in 0..NUMBER_OF_COBOS {
+    for idx in 0..NUMBER_OF_COBOS {
         let this_frame_tx = frame_tx.clone();
         let mut this_cancel_rx = cancel_tx.subscribe();
         let handle = rt.spawn(async move {
-            match ECCReceiver::new("127.0.0.1", "8080", this_frame_tx).await {
-                //TODO: replace these with real ip/port handlers
+            let ip = format!("{}.{}", MM_IP_SUBNET, 60 + idx);
+            match ECCReceiver::new(&ip, EXPORTER_PORT, this_frame_tx).await {
                 Ok(mut ecc) => match ecc.run(&mut this_cancel_rx).await {
                     Ok(()) => (),
                     Err(e) => tracing::error!("ECCReciever ran into an error: {}", e),
