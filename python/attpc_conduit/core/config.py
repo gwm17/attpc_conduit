@@ -8,7 +8,7 @@ from spyral import (
     DetectorParameters,
     ClusterParameters,
     EstimateParameters,
-    INVALID_PATH,
+    DEFAULT_MAP,
 )
 
 
@@ -107,6 +107,9 @@ cluster_param_props: dict[str, ParamProperties] = {
     "cluster_selection_epsilon": ParamProperties(
         "Cluster Selection Epsilon", 0.0, 30.0, 10.0, ParamType.FLOAT
     ),
+    "min_cluster_size_join": ParamProperties(
+        "Minimum Cluster Size for Join", 0, 30, 15, ParamType.INT
+    ),
     "circle_overlap_ratio": ParamProperties(
         "Circle Overlap Ratio", 0.0, 1.0, 0.5, ParamType.FLOAT
     ),
@@ -166,12 +169,10 @@ class Config:
         """
         # Idk how to switch this yet
         self.pads = PadParameters(
-            is_default=True,
-            is_default_legacy=False,
-            pad_geometry_path=INVALID_PATH,
-            pad_time_path=INVALID_PATH,
-            pad_electronics_path=INVALID_PATH,
-            pad_scale_path=INVALID_PATH,
+            pad_geometry_path=DEFAULT_MAP,
+            pad_time_path=DEFAULT_MAP,
+            pad_electronics_path=DEFAULT_MAP,
+            pad_scale_path=DEFAULT_MAP,
         )
         self.detector = DetectorParameters(
             magnetic_field=3.0,
@@ -181,7 +182,7 @@ class Config:
             micromegas_time_bucket=10,
             window_time_bucket=560,
             get_frequency=6.25,
-            garfield_file_path=INVALID_PATH,
+            garfield_file_path=Path("Invalid"),  # We don't use this
             do_garfield_correction=False,
         )
         self.get = GetParameters(
@@ -197,6 +198,7 @@ class Config:
             min_size_scale_factor=0.05,
             min_size_lower_cutoff=10,
             cluster_selection_epsilon=10.0,
+            min_cluster_size_join=15,
             circle_overlap_ratio=0.5,
             outlier_scale_factor=0.5,
         )

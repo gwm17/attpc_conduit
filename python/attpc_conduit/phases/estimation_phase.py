@@ -69,6 +69,7 @@ class EstimationPhase(PhaseLike):
                 "azimuthal": [],
                 "brho": [],
                 "dEdx": [],
+                "log_dEdx": [],
                 "dE": [],
                 "arclength": [],
                 "direction": [],
@@ -125,7 +126,7 @@ class EstimationPhase(PhaseLike):
         rr.log(
             "/event/circles",
             rr.LineStrips3D(
-                circle_block_data, radii=RADIUS, colors=None, class_ids=used_labels
+                circle_block_data, radii=RADIUS, colors=None, class_ids=used_labels  # type: ignore
             ),
         )
 
