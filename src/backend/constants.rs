@@ -23,9 +23,6 @@ pub const NUMBER_OF_MATRIX_COLUMNS: usize = NUMBER_OF_TIME_BUCKETS as usize + 5;
 // Algorithm constants
 pub const MAX_FRAME_CACHE: usize = 44;
 
-// Server constants
-pub const DEFAULT_SERVER_PORT: &str = "10986";
-
 // GETDAQ constants
 pub const MM_IP_SUBNET: &str = "192.168.41"; // Subnet for all the MacMini's in AT-TPC
 pub const EXPORTER_PORT: &str = "46491";

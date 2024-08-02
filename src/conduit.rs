@@ -8,7 +8,6 @@ use tracing_subscriber;
 
 use pyo3::prelude::*;
 
-use super::backend::constants::DEFAULT_SERVER_PORT;
 use super::backend::constants::NUMBER_OF_COBOS;
 use super::backend::ecc_reciever::startup_ecc_recievers;
 use super::backend::event::Event;
@@ -16,8 +15,6 @@ use super::backend::event_builder::startup_event_builder;
 use super::backend::graw_frame::GrawFrame;
 use super::backend::message::ConduitMessage;
 use super::backend::pad_map::PadMap;
-use super::backend::point_cloud::PointCloud;
-use super::backend::server::startup_server;
 
 /// The Conduit is the main interface for controlling the behavior of the backend
 /// as well as exposing events to further analysis pipelines. Conduit is python compatible
@@ -27,10 +24,8 @@ use super::backend::server::startup_server;
 pub struct Conduit {
     event_receiver: Option<mpsc::Receiver<Event>>,
     cancel_sender: broadcast::Sender<ConduitMessage>,
-    cloud_sender: broadcast::Sender<PointCloud>,
     runtime: tokio::runtime::Runtime,
     handles: Option<Vec<JoinHandle<()>>>,
-    server_port: String,
     pad_path: PathBuf,
 }
 
@@ -47,7 +42,6 @@ impl Conduit {
             .expect("Could not build tokio runtime!");
 
         let (cancel_tx, _) = broadcast::channel(11);
-        let (cloud_tx, _) = broadcast::channel(10);
 
         //Create our logging/tracing system.
         let subscriber = tracing_subscriber::fmt()
@@ -63,10 +57,8 @@ impl Conduit {
         Self {
             event_receiver: None,
             cancel_sender: cancel_tx,
-            cloud_sender: cloud_tx,
             runtime: rt,
             handles: None,
-            server_port: String::from(DEFAULT_SERVER_PORT),
             pad_path,
         }
     }
@@ -108,15 +100,6 @@ impl Conduit {
         );
         handles.push(evb_handle);
 
-        tracing::info!("Starting server communication...");
-        let server_handle = startup_server(
-            &self.runtime,
-            self.cloud_sender.clone(),
-            self.cancel_sender.clone(),
-            self.server_port.clone(),
-        );
-        handles.push(server_handle);
-
         self.handles = Some(handles);
         self.event_receiver = Some(event_rx);
 
@@ -156,15 +139,6 @@ impl Conduit {
                 Err(_) => None,
             },
             None => None,
-        }
-    }
-
-    /// Submit a point cloud to the conduit server.
-    pub fn submit_point_cloud(&mut self, cloud_buffer: Vec<u8>) {
-        let cloud = PointCloud::new(cloud_buffer);
-        match self.cloud_sender.send(cloud) {
-            Ok(_) => (),
-            Err(_) => tracing::error!("Could not send a point cloud!"),
         }
     }
 }
