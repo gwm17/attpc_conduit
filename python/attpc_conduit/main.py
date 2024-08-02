@@ -11,6 +11,7 @@ from .pipeline import init_detector_bounds, ConduitPipeline
 from .phases import PointcloudPhase, EstimationPhase, ClusterPhase
 from .core.static import PAD_ELEC_PATH
 from .core.blueprint import generate_default_blueprint
+from .core.histograms import initialize_default_histograms
 
 from spyral_utils.plot import Histogrammer
 import dearpygui.dearpygui as dpg
@@ -53,9 +54,8 @@ pipeline = ConduitPipeline(
 )
 
 # Add some histograms
-grammer.add_hist2d("particle_id", (512, 512), ((0.0, 5.0e3), (0.0, 3.0)))
-grammer.add_hist2d("kinematics", (180, 512), ((0.0, 180.0), (0.0, 3.0)))
-grammer.add_hist1d("polar", 180, (0.0, 180.0))
+initialize_default_histograms(grammer)
+
 
 # Setup detector bounds in rerun
 init_detector_bounds()

@@ -1,5 +1,6 @@
 import rerun.blueprint as bpt
 import rerun as rr
+from .static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM
 
 
 def generate_default_blueprint() -> bpt.Blueprint:
@@ -15,7 +16,7 @@ def generate_default_blueprint() -> bpt.Blueprint:
                 ),
                 bpt.TensorView(
                     name="Kinematics",
-                    contents="$origin/histograms/kinematics",
+                    contents=f"$origin/histograms/{KINEMATICS_HISTOGRAM}",
                     view_fit="fill",
                     slice_selection=bpt.TensorSliceSelection(
                         width=rr.TensorDimensionSelection(dimension=1, invert=False),
@@ -24,7 +25,7 @@ def generate_default_blueprint() -> bpt.Blueprint:
                 ),
                 bpt.TensorView(
                     name="Particle ID",
-                    contents="$origin/histograms/particle_id",
+                    contents=f"$origin/histograms/{PARTICLE_ID_HISTOGRAM}",
                     view_fit="fill",
                     slice_selection=bpt.TensorSliceSelection(
                         width=rr.TensorDimensionSelection(dimension=1, invert=False),

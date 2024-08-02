@@ -3,6 +3,7 @@ from .core.config import Config
 from .core.blueprint import generate_default_blueprint
 from .pipeline import init_detector_bounds, ConduitPipeline
 from .phases import PointcloudPhase, ClusterPhase, EstimationPhase
+from .core.histograms import initialize_default_histograms
 
 from spyral_utils.plot import Histogrammer
 import h5py as h5
@@ -14,10 +15,7 @@ import numpy as np
 
 ## Initialize histogrammer ##
 grammer = Histogrammer()
-
-grammer.add_hist2d("particle_id", (512, 512), ((0.0, 5.0e3), (0.0, 3.0)))
-grammer.add_hist2d("kinematics", (180, 512), ((0.0, 180.0), (0.0, 3.0)))
-grammer.add_hist1d("polar_angle", 180, (0.0, 180.0))
+initialize_default_histograms(grammer)
 ## End histogrammer initialization ##
 
 # handle text logs

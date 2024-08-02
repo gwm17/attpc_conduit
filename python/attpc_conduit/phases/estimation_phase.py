@@ -1,14 +1,13 @@
 from ..core.phase import PhaseLike, PhaseResult
 from ..core.static import CIRCLE_POLARS, RADIUS, N_CIRCLE_POINTS_RENDER
+from ..core.static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM, POLAR_HISTOGRAM
 from spyral.core.config import EstimateParameters, DetectorParameters
-from spyral.core.status_message import StatusMessage
 from spyral.core.estimator import estimate_physics
 
 from numpy.random import Generator
 import numpy as np
 from spyral_utils.plot import Histogrammer
 import rerun as rr
-from logging import warn
 
 
 class EstimationPhase(PhaseLike):
@@ -69,7 +68,7 @@ class EstimationPhase(PhaseLike):
                 "azimuthal": [],
                 "brho": [],
                 "dEdx": [],
-                "log_dEdx": [],
+                "sqrt_dEdx": [],
                 "dE": [],
                 "arclength": [],
                 "direction": [],
@@ -132,17 +131,17 @@ class EstimationPhase(PhaseLike):
 
         # Fill the histograms, but DO NOT LOG HERE
         grammer.fill_hist2d(
-            "kinematics",
+            KINEMATICS_HISTOGRAM,
             np.array(np.rad2deg(result.artifact["polar"])),
             np.array(result.artifact["brho"]),
         )
         grammer.fill_hist2d(
-            "particle_id",
-            np.array(result.artifact["dEdx"]),
+            PARTICLE_ID_HISTOGRAM,
+            np.array(result.artifact["sqrt_dEdx"]),
             np.array(result.artifact["brho"]),
         )
         grammer.fill_hist1d(
-            "polar_angle", np.array(np.rad2deg(result.artifact["polar"]))
+            POLAR_HISTOGRAM, np.array(np.rad2deg(result.artifact["polar"]))
         )
 
         return result

@@ -16,7 +16,7 @@ dependencies = [
     "dearpygui>=1.10",
     "rerun-sdk>=0.17.0",
     "h5py>=3.10",
-    "attpc_spyral>=0.10.0"
+    "attpc_spyral>=0.11.0"
 ]
 
 [project.scripts]
