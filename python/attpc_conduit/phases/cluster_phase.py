@@ -2,8 +2,6 @@ from ..core.phase import PhaseLike, PhaseResult
 from ..core.color import get_label_color
 from ..core.static import RADIUS, UNSIGNED_NOISE_LABEL
 from spyral.core.config import ClusterParameters, DetectorParameters
-from spyral.core.status_message import StatusMessage
-from spyral.core.point_cloud import PointCloud
 from spyral.core.clusterize import (
     form_clusters,
     join_clusters,
@@ -14,8 +12,6 @@ from spyral.core.clusterize import (
 from numpy.random import Generator
 from spyral_utils.plot import Histogrammer
 import rerun as rr
-
-from logging import warn
 
 
 class ClusterPhase(PhaseLike):

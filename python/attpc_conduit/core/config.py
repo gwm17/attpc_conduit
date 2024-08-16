@@ -66,7 +66,7 @@ detector_param_props: dict[str, ParamProperties] = {
         "GET Freq. (MHz)", 0.0, 6.25, 3.125, ParamType.FLOAT
     ),
     "garfield_file_path": ParamProperties(
-        "Gafield File", 0.0, 1.0, "bleh", ParamType.UNUSED
+        "Gafield File", 0.0, 1.0, 0.0, ParamType.UNUSED
     ),
     "do_garfield_correction": ParamProperties(
         "Apply Gafield File", 0.0, 1.0, False, ParamType.UNUSED

@@ -1,5 +1,4 @@
 from .core.phase import PhaseLike, PhaseResult
-from .core.static import CIRCLE_POLARS, RADIUS
 from spyral_utils.plot import Histogrammer, Hist1D, Hist2D
 
 

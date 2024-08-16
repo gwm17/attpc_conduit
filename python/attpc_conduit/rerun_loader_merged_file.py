@@ -164,4 +164,4 @@ def main() -> None:
         if not isinstance(event_data, h5.Dataset):
             continue
 
-        pipeline.run(event_id, event_data, grammer, rng)
+        pipeline.run(event_id, event_data[:], grammer, rng)

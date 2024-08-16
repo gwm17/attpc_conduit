@@ -1,5 +1,4 @@
 from ..core.phase import PhaseLike, PhaseResult
-from ..core.static import CIRCLE_POLARS, RADIUS, N_CIRCLE_POINTS_RENDER
 from ..core.static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM, POLAR_HISTOGRAM
 from spyral.core.config import EstimateParameters, DetectorParameters
 from spyral.core.estimator import estimate_physics
@@ -98,7 +97,7 @@ class EstimationPhase(PhaseLike):
 
         # Log circles if they exist
         n_circles = len(result.artifact["event"])
-        circle_block_data = np.zeros((n_circles, N_CIRCLE_POINTS_RENDER, 3))
+        circle_block_data = np.zeros((n_circles, 6))
         used_labels = []
         for ridx in range(n_circles):
             rho = (
@@ -109,23 +108,22 @@ class EstimationPhase(PhaseLike):
             )
 
             # Log the circles
-            circle_block_data[ridx, :, 2] = result.artifact["vertex_z"][ridx]
-            circle_block_data[ridx, :, :2] = np.array(
+            circle_block_data[ridx, 3:] = np.array(
                 [
-                    np.array(
-                        [
-                            rho * np.cos(polar) + result.artifact["center_x"][ridx],
-                            rho * np.sin(polar) + result.artifact["center_y"][ridx],
-                        ]
-                    )
-                    for polar in CIRCLE_POLARS
+                    result.artifact["center_x"][ridx],
+                    result.artifact["center_y"][ridx],
+                    result.artifact["vertex_z"][ridx],
                 ]
             )
+            circle_block_data[ridx, :3] = np.array([rho, rho, 0.0])
             used_labels.append(result.artifact["cluster_label"][ridx])
         rr.log(
             "/event/circles",
-            rr.LineStrips3D(
-                circle_block_data, radii=RADIUS, colors=None, class_ids=used_labels  # type: ignore
+            rr.Ellipsoids3D(
+                half_sizes=circle_block_data[:, :3],
+                centers=circle_block_data[:, 3:],
+                colors=None,
+                class_ids=used_labels,
             ),
         )
 

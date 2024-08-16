@@ -1,11 +1,6 @@
-import numpy as np
 from importlib.resources import files, as_file
 
 UNSIGNED_NOISE_LABEL = 4096
-
-N_CIRCLE_POINTS_RENDER = 100
-
-CIRCLE_POLARS = np.linspace(0.0, np.pi * 2.0, N_CIRCLE_POINTS_RENDER)
 
 RADIUS = 2.0
 

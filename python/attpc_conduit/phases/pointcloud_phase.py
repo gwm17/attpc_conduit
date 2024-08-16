@@ -1,17 +1,10 @@
 from ..core.phase import PhaseLike, PhaseResult
 from ..core.color import generate_point_colors
 from ..core.static import RADIUS
-from spyral.core.status_message import StatusMessage
 from spyral.core.config import (
-    FribParameters,
     GetParameters,
     DetectorParameters,
     PadParameters,
-)
-from spyral.correction import (
-    generate_electron_correction,
-    create_electron_corrector,
-    ElectronCorrector,
 )
 from spyral.core.pad_map import PadMap
 from spyral.trace.get_event import GetEvent

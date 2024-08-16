@@ -350,7 +350,7 @@ def main():
     # This is the main DearPyGui event loop.
     # The more stuff shoved in here, the less
     # responsive the ConduitPanel will be
-    while dpg.is_dearpygui_running() == True:
+    while dpg.is_dearpygui_running():
         event = conduit.poll_events()  # Poll the conduit
         ## Do analysis here...
         if event is not None:

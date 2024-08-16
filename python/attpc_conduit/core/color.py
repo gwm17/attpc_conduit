@@ -1,7 +1,6 @@
 from cmap import Colormap, Color
 import numpy as np
 from .static import UNSIGNED_NOISE_LABEL
-import logging
 
 # Hardcoded for now
 POINT_COLORMAP: Colormap = Colormap("viridis")
