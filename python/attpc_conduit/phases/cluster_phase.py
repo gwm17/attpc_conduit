@@ -73,13 +73,17 @@ class ClusterPhase(PhaseLike):
             "/event",
             rr.AnnotationContext(
                 [
-                    (label, f"cluster_{label}", get_label_color(label))
+                    rr.AnnotationInfo(label, None, get_label_color(label))
                     for label in unique_labels
                 ]
             ),
         )
         rr.log(
             "/event/clusters",
-            rr.Points3D(payload.artifact.cloud[:, :3], radii=RADIUS, class_ids=labels),
+            rr.Points3D(
+                payload.artifact.cloud[:, :3],
+                radii=RADIUS,
+                class_ids=labels,
+            ),
         )
         return result
