@@ -129,12 +129,15 @@ impl Conduit {
     }
 
     /// Poll the conduit for any new events. The events are marshalled to Python numpy arrarys.
-    pub fn poll_events<'py>(&mut self, py: Python<'py>) -> Option<(u32, &'py PyArray2<i16>)> {
+    pub fn poll_events<'py>(
+        &mut self,
+        py: Python<'py>,
+    ) -> Option<(u32, Bound<'py, PyArray2<i16>>)> {
         match self.event_receiver.as_mut() {
             Some(rx) => match rx.try_recv() {
                 Ok(event) => Some((
                     event.get_event_id(),
-                    event.convert_to_data_matrix().into_pyarray(py),
+                    event.convert_to_data_matrix().into_pyarray_bound(py),
                 )),
                 Err(_) => None,
             },
