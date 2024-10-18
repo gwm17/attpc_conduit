@@ -145,10 +145,7 @@ def main() -> None:
         file.close()
         exit(rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE)
 
-    rr.init(
-        app_id,
-        recording_id=args.recording_id,
-    )
+    rr.init(app_id, recording_id=args.recording_id)
     rr.send_blueprint(generate_default_blueprint(), make_active=True, make_default=True)
     rr.stdout()  # type: ignore  # Required for custom file loaders
 

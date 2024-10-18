@@ -24,12 +24,11 @@ import logging
 RATE_IN_STRING = "Conduit Data Rate In (MB/s):"
 RATE_OUT_STRING = "Conduit Data Rate Out (MB/s):"
 EVENT_STRING = "Last Processed Event:"
-RADIUS = 2.0
 
 ## Initialize a whole mess of global data ##
 
 init_conduit_logger()  # initialize Rust logging
-rr.init("attpc_conduit_data", spawn=True)  # initialize Rerun
+rr.init("attpc_conduit_data", spawn=False)  # initialize Rerun
 
 rr.send_blueprint(generate_default_blueprint())
 
@@ -344,6 +343,7 @@ def main():
     """Entry point for run-conduit script"""
 
     # Start the gui
+    rr.connect("127.0.0.1:9876")
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.set_primary_window("Conduit Control", True)
