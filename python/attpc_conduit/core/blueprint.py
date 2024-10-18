@@ -4,7 +4,6 @@ from .static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM
 
 
 def generate_default_blueprint() -> bpt.Blueprint:
-
     return bpt.Blueprint(
         bpt.Horizontal(
             bpt.Tabs(
@@ -19,8 +18,8 @@ def generate_default_blueprint() -> bpt.Blueprint:
                     contents=f"$origin/histograms/{KINEMATICS_HISTOGRAM}",
                     view_fit="fill",
                     slice_selection=bpt.TensorSliceSelection(
-                        width=rr.TensorDimensionSelection(dimension=1, invert=False),
-                        height=rr.TensorDimensionSelection(dimension=0, invert=True),
+                        width=rr.TensorDimensionSelection(dimension=0, invert=False),
+                        height=rr.TensorDimensionSelection(dimension=1, invert=True),
                     ),
                 ),
                 bpt.TensorView(
@@ -28,8 +27,8 @@ def generate_default_blueprint() -> bpt.Blueprint:
                     contents=f"$origin/histograms/{PARTICLE_ID_HISTOGRAM}",
                     view_fit="fill",
                     slice_selection=bpt.TensorSliceSelection(
-                        width=rr.TensorDimensionSelection(dimension=1, invert=False),
-                        height=rr.TensorDimensionSelection(dimension=0, invert=True),
+                        width=rr.TensorDimensionSelection(dimension=0, invert=False),
+                        height=rr.TensorDimensionSelection(dimension=1, invert=True),
                     ),
                 ),
                 bpt.TextLogView(name="Logs"),

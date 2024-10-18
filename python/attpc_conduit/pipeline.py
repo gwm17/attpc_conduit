@@ -85,4 +85,6 @@ class ConduitPipeline:
             if isinstance(gram, Hist1D):
                 rr.log(f"/histograms/{gram.name}", rr.BarChart(gram.counts))
             elif isinstance(gram, Hist2D):
-                rr.log(f"/histograms/{gram.name}", rr.Tensor(gram.counts), static=True)
+                rr.log(
+                    f"/histograms/{gram.name}", rr.Tensor(gram.counts.T), static=True
+                )
