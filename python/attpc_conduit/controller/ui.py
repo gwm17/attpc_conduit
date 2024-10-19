@@ -7,9 +7,8 @@ from ..core.config import (
     estimate_param_props,
 )
 from pathlib import Path
-from nicegui import ui, app
+from nicegui import ui
 from typing import Any
-import json
 
 
 RATE_IN_STRING = "Conduit Data Rate In (MB/s):"
