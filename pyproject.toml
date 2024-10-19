@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "attpc_conduit"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -13,14 +13,14 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
 	"cmap>=0.3.0",
-    "dearpygui>=2.0",
     "rerun-sdk>=0.19.0",
     "h5py>=3.10",
-    "attpc_spyral>=0.14.0"
+    "attpc_spyral>=0.14.0",
+    "nicegui>2.0.0",
+    "rpyc>6.0.0"
 ]
 
 [project.scripts]
-run-conduit = "attpc_conduit.main:main"
 rerun-loader-merged-file = "attpc_conduit.rerun_loader_merged_file:main"
 
 [tool.maturin]
