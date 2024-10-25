@@ -8,7 +8,11 @@ from spyral.core.config import (
 )
 from spyral.core.pad_map import PadMap
 from spyral.trace.get_event import GetEvent
-from spyral.core.point_cloud import PointCloud
+from spyral.core.point_cloud import (
+    point_cloud_from_get,
+    sort_point_cloud_in_z,
+    calibrate_point_cloud_z,
+)
 
 import numpy as np
 from spyral_utils.plot import Histogrammer
@@ -68,22 +72,18 @@ class PointcloudPhase(PhaseLike):
     ) -> PhaseResult:
         # Process the data
 
-        result = PhaseResult(PointCloud(), True, payload.event_id)
-
+        result = PhaseResult(None, False, payload.event_id)
         event = GetEvent(payload.artifact, payload.event_id, self.get_params, rng)
-        result.artifact.load_cloud_from_get_event(event, self.pad_map)
-        result.artifact.calibrate_z_position(
-            self.det_params.micromegas_time_bucket,
-            self.det_params.window_time_bucket,
-            self.det_params.detector_length,
-        )
-        result.artifact.sort_in_z()
-        if len(result.artifact.cloud) == 0:
-            result.successful = False
+        cloud = point_cloud_from_get(event, self.pad_map)
+        calibrate_point_cloud_z(cloud, self.det_params)
+        sort_point_cloud_in_z(cloud)
+        if len(cloud) == 0:
             return result
-        colors = generate_point_colors(result.artifact.cloud[:, 3])
+        colors = generate_point_colors(cloud.data[:, 3])
+        result.artifact = cloud
+        result.successful = True
         rr.log(
             "/event/cloud",
-            rr.Points3D(result.artifact.cloud[:, :3], radii=RADIUS, colors=colors),
+            rr.Points3D(cloud.data[:, :3], radii=RADIUS, colors=colors),
         )
         return result

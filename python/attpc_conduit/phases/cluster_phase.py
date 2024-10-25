@@ -53,17 +53,18 @@ class ClusterPhase(PhaseLike):
         rng: Generator,
     ) -> PhaseResult:
         # Check that point clouds exist
-        result = PhaseResult(None, True, payload.event_id)
+        result = PhaseResult(None, False, payload.event_id)
         if not payload.successful:
-            result.successful = False
             return result
 
         clusters, labels = form_clusters(payload.artifact, self.cluster_params)
         joined, labels = join_clusters(clusters, self.cluster_params, labels)
-        result.artifact, labels = cleanup_clusters(joined, self.cluster_params, labels)
-        if len(result.artifact) == 0:
-            result.successful = False
+        cleaned, labels = cleanup_clusters(joined, self.cluster_params, labels)
+        if len(cleaned) == 0:
             return result
+        result.artifact = cleaned
+        result.successful = True
+
         unique_labels = [c.label for c in result.artifact]
         unique_labels.append(UNSIGNED_NOISE_LABEL)
 
@@ -81,7 +82,7 @@ class ClusterPhase(PhaseLike):
         rr.log(
             "/event/clusters",
             rr.Points3D(
-                payload.artifact.cloud[:, :3],
+                payload.artifact.data[:, :3],
                 radii=RADIUS,
                 class_ids=labels,
             ),

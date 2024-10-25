@@ -57,6 +57,8 @@ class EstimationPhase(PhaseLike):
                 "ic_centroid": [],
                 "ic_integral": [],
                 "ic_multiplicity": [],
+                "orig_run": [],
+                "orig_event": [],
                 "vertex_x": [],
                 "vertex_y": [],
                 "vertex_z": [],
@@ -86,6 +88,8 @@ class EstimationPhase(PhaseLike):
             estimate_physics(
                 cidx,
                 local_cluster,
+                -1,
+                -1,
                 -1,
                 -1,
                 -1,
