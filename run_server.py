@@ -24,7 +24,7 @@ import click
 )
 def run_state_server(port: int, ip: str):
     print(f"Starting state server listening on {ip}:{port}")
-    server = rpyc.utils.server.ThreadedServer(StateService, hostname=ip, port=18861)
+    server = rpyc.utils.server.ThreadedServer(StateService, hostname=ip, port=port)
     try:
         server.start()
     except KeyboardInterrupt:
