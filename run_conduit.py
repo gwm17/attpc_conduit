@@ -58,6 +58,7 @@ def main():
     conduit: Conduit
     with PAD_ELEC_PATH as path:
         conduit = Conduit(path)
+    conduit.start_services()  # Figure out how to do this better...
     grammer = Histogrammer()
     rng = np.random.default_rng()
     state = rpyc.connect("localhost", port=18861)
