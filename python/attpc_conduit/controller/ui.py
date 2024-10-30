@@ -6,6 +6,7 @@ from ..core.config import (
     cluster_param_props,
     estimate_param_props,
 )
+from ..core.state import RunState
 from pathlib import Path
 from nicegui import ui
 from typing import Any
@@ -29,12 +30,12 @@ class AppState:
         self.enabled = False
         self.stopable = True
         self.connection.root.set_config(config)
-        self.connection.root.set_start()
+        self.connection.root.set_run_state(RunState.START_RUN)
 
     def set_stop(self, config: Config):
         self.enabled = True
         self.stopable = False
-        self.connection.root.set_stop()
+        self.connection.root.set_run_state(RunState.STOP_RUN)
 
     def load_config(self, path: Path) -> Config:
         config = Config(path)

@@ -9,9 +9,9 @@ use tracing_subscriber;
 use pyo3::prelude::*;
 
 use super::backend::constants::NUMBER_OF_COBOS;
-use super::backend::ecc_reciever::startup_ecc_recievers;
 use super::backend::event::Event;
 use super::backend::event_builder::startup_event_builder;
+use super::backend::exporter_receiver::startup_exporter_recievers;
 use super::backend::graw_frame::GrawFrame;
 use super::backend::message::ConduitMessage;
 use super::backend::pad_map::PadMap;
@@ -64,7 +64,7 @@ impl Conduit {
     }
 
     /// Initialize and start all of the backend services
-    pub fn start_services(&mut self) {
+    pub fn connect(&mut self) {
         if !self.handles.is_none() {
             tracing::warn!("Could not start services, as they're already started!");
             return;
@@ -81,11 +81,11 @@ impl Conduit {
             }
         };
 
-        tracing::info!("Starting ECC communication...");
-        let mut handles = startup_ecc_recievers(&self.runtime, &frame_tx, &self.cancel_sender);
+        tracing::info!("Starting DataExporter communication...");
+        let mut handles = startup_exporter_recievers(&self.runtime, &frame_tx, &self.cancel_sender);
         if handles.len() < NUMBER_OF_COBOS as usize {
             tracing::warn!(
-                "There was an issue spawning ECCReceivers! Only spawned {} receivers",
+                "There was an issue spawning DataExporter receivers! Only spawned {} receivers",
                 handles.len()
             )
         }
@@ -107,7 +107,7 @@ impl Conduit {
     }
 
     /// Shutdown all of the backend services
-    pub fn stop_services(&mut self) {
+    pub fn disconnect(&mut self) {
         if self.handles.is_none() {
             tracing::warn!("Could not stop services as there weren't any active!");
             return;
@@ -143,5 +143,10 @@ impl Conduit {
             },
             None => None,
         }
+    }
+
+    /// See if the conduit is connected to it's envoys
+    pub fn is_connected(&self) -> bool {
+        self.handles.is_some()
     }
 }

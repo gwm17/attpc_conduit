@@ -13,14 +13,14 @@ class Conduit:
     -------
     Conduit(pad_path: Path)
         Create a new Conduit object. There should only ever be one Conduit per pipeline.
-    start_services()
+    connect()
         Start the Conduit, creating the communication channels and async tasks.
-    stop_services()
+    disconnect()
         Stop the Conduit, destroying communication channels and tasks.
     poll_events() -> tuple[int, ndarray] | None
         Poll the Conduit, asking if any events have been recieved and merged.
-    submit_point_cloud(cloud_buffer: ndarray)
-        Submit a point cloud to the server
+    is_connected() -> bool
+        Check if the conduit is connected to its envoys
     """
 
     def __init__(self, pad_path: Path):
@@ -39,7 +39,7 @@ class Conduit:
             The conduit object
         """
         ...
-    def start_services(self):
+    def connect(self):
         """Start the Conduit, creating the communication channels and async tasks.
 
         This spawns the async tasks to the runtime and starts the process of receiving data
@@ -47,7 +47,7 @@ class Conduit:
         almost always be run when starting your application.
         """
         ...
-    def stop_services(self):
+    def disconnect(self):
         """Stop the Conduit, destroying communication channels and tasks.
 
         This submits a message to cancel any async tasks and awaits their
@@ -67,5 +67,15 @@ class Conduit:
             M is the length of the trace data. The first 5 columns are the hardware information (CoBo, AsAd, AGET, channel, pad)
             and the remaining 512 elements are the trace in GET time buckets. Each element of the trace matrix is a 16-bit integer.
 
+        """
+        ...
+
+    def is_connected(self) -> bool:
+        """Check if the conduit has been connected to it's envoys
+
+        Returns
+        -------
+        bool
+            True if connected, False if disconnected
         """
         ...

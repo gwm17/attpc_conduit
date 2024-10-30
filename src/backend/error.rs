@@ -92,55 +92,55 @@ impl Display for GrawFrameError {
 impl Error for GrawFrameError {}
 
 /*
-   ECCReceiver errors
+   ExporterReceiver errors
 */
 
 #[derive(Debug)]
-pub enum ECCReceiverError {
+pub enum ExporterReceiverError {
     BadFrame(GrawFrameError),
     AddressParseError,
     IOError(std::io::Error),
     Timeout(tokio::time::error::Elapsed),
 }
 
-impl From<GrawFrameError> for ECCReceiverError {
+impl From<GrawFrameError> for ExporterReceiverError {
     fn from(value: GrawFrameError) -> Self {
         Self::BadFrame(value)
     }
 }
 
-impl From<std::io::Error> for ECCReceiverError {
+impl From<std::io::Error> for ExporterReceiverError {
     fn from(value: std::io::Error) -> Self {
         Self::IOError(value)
     }
 }
 
-impl From<std::net::AddrParseError> for ECCReceiverError {
+impl From<std::net::AddrParseError> for ExporterReceiverError {
     fn from(_: std::net::AddrParseError) -> Self {
         Self::AddressParseError
     }
 }
 
-impl From<tokio::time::error::Elapsed> for ECCReceiverError {
+impl From<tokio::time::error::Elapsed> for ExporterReceiverError {
     fn from(value: tokio::time::error::Elapsed) -> Self {
         Self::Timeout(value)
     }
 }
 
-impl Display for ECCReceiverError {
+impl Display for ExporterReceiverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BadFrame(frame) => {
                 write!(f, "Bad frame found when reading GrawFile! Error: {}", frame)
             }
-            Self::AddressParseError => write!(f, "Bad IP address and socket at ECCReciever"),
+            Self::AddressParseError => write!(f, "Bad IP address and socket at ExporterReciever"),
             Self::IOError(e) => write!(f, "GrawFile recieved an io error: {}!", e),
-            Self::Timeout(e) => write!(f, "Attepmt to connect ECCReceiver timed out! {}", e),
+            Self::Timeout(e) => write!(f, "Attepmt to connect ExporterReceiver timed out! {}", e),
         }
     }
 }
 
-impl Error for ECCReceiverError {}
+impl Error for ExporterReceiverError {}
 
 /*
    PadMap errors
