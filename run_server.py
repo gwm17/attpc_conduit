@@ -18,7 +18,7 @@ import click
     "--ip",
     "-i",
     default="0.0.0.0",
-    type=int,
+    type=str,
     help="The ip addresses listen on",
     show_default=True,
 )
