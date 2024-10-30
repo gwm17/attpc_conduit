@@ -20,6 +20,6 @@ import click
     help="The port which the state server is listening on",
     show_default=True,
 )
-def run_controller(ip, port):
-    remote_state = rpyc.connect("localhost", 18861)
+def run_controller(ip: str, port: int):
+    remote_state = rpyc.connect(host=ip, port=18861)
     create_and_run_controller(remote_state)
