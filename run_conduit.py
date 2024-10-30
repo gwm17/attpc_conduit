@@ -7,7 +7,7 @@ from attpc_conduit.phases import PointcloudPhase, EstimationPhase, ClusterPhase
 from attpc_conduit.core.static import PAD_ELEC_PATH
 from attpc_conduit.core.blueprint import generate_default_blueprint
 from attpc_conduit.core.histograms import initialize_default_histograms
-from attpc_conduit.core.state import RunState, StateService
+from attpc_conduit.core.state import RunState
 
 from spyral_utils.plot import Histogrammer
 import rerun as rr
@@ -89,7 +89,7 @@ def run_conduit(viewer_ip: str, viewer_port: int, state_ip: str, state_port: int
         conduit = Conduit(path)
     grammer = Histogrammer()
     rng = np.random.default_rng()
-    state = rpyc.connect(state_ip, port=state_port, service=StateService)
+    state = rpyc.connect(state_ip, port=state_port)
 
     logging.info(
         "Conduit and control created succesfully, now making the histogram memory..."

@@ -1,6 +1,7 @@
-from attpc_conduit.controller.ui import create_and_run_controller
+from attpc_conduit.controller.ui import build_controller
 import rpyc
 import click
+from nicegui import ui
 
 
 @click.command()
@@ -22,8 +23,10 @@ import click
 )
 def run_controller(ip: str, port: int):
     remote_state = rpyc.connect(host=ip, port=18861)
-    create_and_run_controller(remote_state)
+    build_controller(remote_state)
 
 
 if __name__ in {"__main__", "__mp_main__"}:
-    run_controller()
+    if __name__ == "__mp_main__":
+        run_controller()
+    ui.run()
