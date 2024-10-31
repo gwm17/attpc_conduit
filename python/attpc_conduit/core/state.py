@@ -5,10 +5,10 @@ from enum import Enum
 
 
 class RunState(Enum):
-    START_RUN: int = 0
-    STOP_RUN: int = 1
-    RUNNING: int = 2
-    NOT_RUNNING: int = 3
+    START_RUN = 0
+    STOP_RUN = 1
+    RUNNING = 2
+    NOT_RUNNING = 3
 
 
 class StateService(Service):

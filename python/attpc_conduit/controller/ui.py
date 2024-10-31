@@ -166,7 +166,7 @@ def create_estimate_sliders(config: Config, state: AppState):
                     pass
 
 
-def create_and_run_controller(remote_state: Any):
+def build_controller(remote_state: Any):
     config = Config()
     state = AppState(remote_state)
     ui.dark_mode(True)
@@ -200,4 +200,3 @@ def create_and_run_controller(remote_state: Any):
     ui.label("Estimation Parameters").classes("text-lg")
     create_estimate_sliders(config, state)
     ui.separator()
-    ui.run()
