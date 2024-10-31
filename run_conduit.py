@@ -73,7 +73,10 @@ def run_pipeline(
 def run_conduit(viewer_ip: str, viewer_port: int, state_ip: str, state_port: int):
     init_conduit_logger()  # initialize Rust logging
     rr.init("attpc_conduit_data", spawn=False)  # initialize Rerun
-    rr.connect(f"{viewer_ip}:{viewer_port}")  # connect to a viewer
+    if viewer_ip == "localhost":
+        rr.connect(f"127.0.0.1:{viewer_port}")  # connect to a viewer
+    else:
+        rr.connect(f"{viewer_ip}:{viewer_port}")  # connect to a viewer
 
     rr.send_blueprint(generate_default_blueprint())
 
