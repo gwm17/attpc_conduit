@@ -22,10 +22,10 @@ from nicegui import ui
     show_default=True,
 )
 def run_controller(ip: str, port: int):
-    remote_state = rpyc.connect(host=ip, port=18861)
+    remote_state = rpyc.connect(host=ip, port=port)
     build_controller(remote_state)
-
-
-if __name__ == "main":
-    run_controller()
     ui.run(reload=False)
+
+
+if __name__ == "__main__":
+    run_controller()
