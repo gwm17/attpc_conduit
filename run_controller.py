@@ -26,7 +26,6 @@ def run_controller(ip: str, port: int):
     build_controller(remote_state)
 
 
-if __name__ in {"__main__", "__mp_main__"}:
-    if __name__ == "__mp_main__":
-        run_controller()
-    ui.run()
+if __name__ == "main":
+    run_controller()
+    ui.run(reload=False)
