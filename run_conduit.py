@@ -119,8 +119,6 @@ def run_conduit(viewer_ip: str, viewer_port: int, state_ip: str, state_port: int
                 state.root.set_run_state(RunState.NOT_RUNNING)
                 conduit.disconnect()
                 logging.info("Disconnected.")
-            elif state.root.should_shutdown():
-                break
         except KeyboardInterrupt:
             logging.info("Conduit recieved KeyboardInterrupt, shutting down.")
             break
