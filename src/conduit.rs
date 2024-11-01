@@ -4,11 +4,11 @@ use std::path::PathBuf;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
-use tracing_subscriber;
 
 use pyo3::prelude::*;
 
 use super::backend::constants::NUMBER_OF_COBOS;
+use super::backend::error::ConduitError;
 use super::backend::event::Event;
 use super::backend::event_builder::startup_event_builder;
 use super::backend::exporter_receiver::startup_exporter_recievers;
@@ -25,7 +25,7 @@ pub struct Conduit {
     event_receiver: Option<mpsc::Receiver<Event>>,
     cancel_sender: broadcast::Sender<ConduitMessage>,
     runtime: tokio::runtime::Runtime,
-    handles: Option<Vec<JoinHandle<()>>>,
+    handles: Option<Vec<JoinHandle<Result<(), ConduitError>>>>,
     pad_path: PathBuf,
 }
 
@@ -43,17 +43,6 @@ impl Conduit {
 
         let (cancel_tx, _) = broadcast::channel(11);
 
-        //Create our logging/tracing system.
-        let subscriber = tracing_subscriber::fmt()
-            .compact()
-            .with_file(true)
-            .with_line_number(true)
-            .with_thread_ids(true)
-            .with_target(false)
-            .finish();
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("Could not initialize the tracing system!");
-
         Self {
             event_receiver: None,
             cancel_sender: cancel_tx,
@@ -66,31 +55,31 @@ impl Conduit {
     /// Initialize and start all of the backend services
     pub fn connect(&mut self) {
         if !self.handles.is_none() {
-            tracing::warn!("Could not start services, as they're already started!");
+            log::warn!("Could not start services, as they're already started!");
             return;
         }
 
-        tracing::info!("Creating communication channels and loading pad map...");
+        log::info!("Creating communication channels and loading pad map...");
         let (frame_tx, frame_rx) = mpsc::channel::<GrawFrame>(40);
         let (event_tx, event_rx) = mpsc::channel::<Event>(40);
         let pad_map = match PadMap::new(&self.pad_path) {
             Ok(map) => map,
             Err(e) => {
-                tracing::error!("{e}");
+                log::error!("PadMap ran into a problem: {e}");
                 return;
             }
         };
 
-        tracing::info!("Starting DataExporter communication...");
+        log::info!("Starting DataExporter communication...");
         let mut handles = startup_exporter_recievers(&self.runtime, &frame_tx, &self.cancel_sender);
         if handles.len() < NUMBER_OF_COBOS as usize {
-            tracing::warn!(
+            log::warn!(
                 "There was an issue spawning DataExporter receivers! Only spawned {} receivers",
                 handles.len()
             )
         }
 
-        tracing::info!("Starting Event Builder communication...");
+        log::info!("Starting Event Builder communication...");
         let evb_handle = startup_event_builder(
             &self.runtime,
             frame_rx,
@@ -103,17 +92,17 @@ impl Conduit {
         self.handles = Some(handles);
         self.event_receiver = Some(event_rx);
 
-        tracing::info!("Communication started.");
+        log::info!("Communication started.");
     }
 
     /// Shutdown all of the backend services
     pub fn disconnect(&mut self) {
         if self.handles.is_none() {
-            tracing::warn!("Could not stop services as there weren't any active!");
+            log::warn!("Could not stop services as there weren't any active!");
             return;
         }
 
-        tracing::info!("Stopping all Conduit services...");
+        log::info!("Stopping all Conduit services...");
 
         let handles = self.handles.take().expect("This literally cannot happen");
         self.cancel_sender
@@ -121,11 +110,14 @@ impl Conduit {
             .expect("Somehow all the services were already dead");
         for handle in handles {
             match self.runtime.block_on(handle) {
-                Ok(()) => (),
-                Err(e) => tracing::error!("Error whilst joining services: {}", e),
+                Ok(res) => match res {
+                    Ok(_) => (),
+                    Err(e) => log::error!("One of the services had an error: {}", e),
+                },
+                Err(e) => log::error!("Error whilst joining services: {}", e),
             }
         }
-        tracing::info!("Stopped.");
+        log::info!("Conduit stopped.");
     }
 
     /// Poll the conduit for any new events. The events are marshalled to Python numpy arrarys.

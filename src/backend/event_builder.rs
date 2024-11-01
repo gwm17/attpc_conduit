@@ -6,7 +6,7 @@ use tokio::task::JoinHandle;
 
 use crate::backend::constants::MAX_FRAME_CACHE;
 
-use super::error::EventBuilderError;
+use super::error::{ConduitError, EventBuilderError};
 use super::event::Event;
 use super::graw_frame::GrawFrame;
 use super::message::ConduitMessage;
@@ -72,7 +72,6 @@ impl EventCache {
                 "Some how frame cache didn't have event {least_recently_used}!"
             )))
         } else {
-            tracing::error!("Some how even though the cache is full, there is no event order!");
             Err(EventBuilderError::BrokenCache)
         }
     }
@@ -145,7 +144,7 @@ impl EventBuilder {
                 .await
             {
                 Ok(()) => (),
-                Err(e) => tracing::error!("Error occured in EventBuilder sending Event: {}", e),
+                Err(_) => return Err(EventBuilderError::ClosedChannel),
             }
         }
 
@@ -160,13 +159,13 @@ pub fn startup_event_builder(
     event_tx: mpsc::Sender<Event>,
     cancel: &broadcast::Sender<ConduitMessage>,
     pad_map: PadMap,
-) -> JoinHandle<()> {
+) -> JoinHandle<Result<(), ConduitError>> {
     let mut evb = EventBuilder::new(pad_map, frame_rx, event_tx);
     let mut cancel_rx = cancel.subscribe();
     rt.spawn(async move {
         match evb.run(&mut cancel_rx).await {
-            Ok(()) => (),
-            Err(e) => tracing::error!("EventBuilder error: {e}"),
+            Ok(()) => Ok(()),
+            Err(e) => Err(ConduitError::FailedEventBuilder(e)),
         }
     })
 }

@@ -230,31 +230,20 @@ impl Display for EventBuilderError {
 
 impl Error for EventBuilderError {}
 
+// ConduitError
 #[derive(Debug)]
-pub enum ServerError {
-    IOError(std::io::Error),
-    Timeout(tokio::time::error::Elapsed),
+pub enum ConduitError {
+    BrokenReceiver(ExporterReceiverError),
+    FailedEventBuilder(EventBuilderError),
 }
 
-impl From<std::io::Error> for ServerError {
-    fn from(value: std::io::Error) -> Self {
-        Self::IOError(value)
-    }
-}
-
-impl From<tokio::time::error::Elapsed> for ServerError {
-    fn from(value: tokio::time::error::Elapsed) -> Self {
-        Self::Timeout(value)
-    }
-}
-
-impl Display for ServerError {
+impl Display for ConduitError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::IOError(e) => write!(f, "The server ran into an IO error: {e}"),
-            Self::Timeout(e) => write!(f, "The server timed out on a connection: {e}"),
+            Self::BrokenReceiver(val) => write!(f, "A Receiver in the Conduit failed: {}", val),
+            Self::FailedEventBuilder(val) => write!(f, "The Conduit event builder failed: {}", val),
         }
     }
 }
 
-impl Error for ServerError {}
+impl Error for ConduitError {}

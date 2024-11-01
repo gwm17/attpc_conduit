@@ -8,7 +8,7 @@ use tokio::time::timeout;
 use super::constants::{
     EXPECTED_HEADER_SIZE, EXPORTER_PORT, MM_IP_SUBNET, NUMBER_OF_COBOS, SIZE_UNIT,
 };
-use super::error::ExporterReceiverError;
+use super::error::{ConduitError, ExporterReceiverError};
 use super::graw_frame::{GrawFrame, GrawFrameHeader};
 use super::message::ConduitMessage;
 
@@ -22,7 +22,6 @@ pub async fn run_exporter_receiver(
 ) -> Result<(), ExporterReceiverError> {
     let addr: SocketAddr = format!("{ip}:{port}").parse()?;
     let mut socket: TcpStream = (timeout(CONNECTION_TIMEOUT, TcpStream::connect(&addr)).await?)?;
-    tracing::info!("Connected ExporterReciever to IP: {ip}");
     loop {
         tokio::select! {
             _ = cancel.recv() => {
@@ -56,17 +55,16 @@ pub fn startup_exporter_recievers(
     rt: &tokio::runtime::Runtime,
     frame_tx: &mpsc::Sender<GrawFrame>,
     cancel_tx: &broadcast::Sender<ConduitMessage>,
-) -> Vec<JoinHandle<()>> {
-    let mut handles: Vec<JoinHandle<()>> = vec![];
-    tracing::info!("Connecting ECCReceivers...");
+) -> Vec<JoinHandle<Result<(), ConduitError>>> {
+    let mut handles = vec![];
     for idx in 0..NUMBER_OF_COBOS {
         let this_frame_tx = frame_tx.clone();
         let this_cancel_rx = cancel_tx.subscribe();
         let ip = format!("{}.{}", MM_IP_SUBNET, 60 + idx);
         let handle = rt.spawn(async move {
             match run_exporter_receiver(&ip, EXPORTER_PORT, this_frame_tx, this_cancel_rx).await {
-                Ok(()) => tracing::info!("Disconnected ECCReceiver from IP: {}", ip),
-                Err(e) => tracing::error!("ECCReciever ran into an error: {}", e),
+                Ok(()) => Ok(()),
+                Err(e) => Err(ConduitError::BrokenReceiver(e)),
             }
         });
 

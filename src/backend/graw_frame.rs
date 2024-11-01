@@ -144,8 +144,6 @@ impl GrawFrameHeader {
             / (SIZE_UNIT as f64))
             .ceil() as u32;
         if self.frame_size != calc_frame_size {
-            tracing::warn!("When checking header for event {} for CoBo {} AsAd {}, the calculated size of the frame {} did not match the reported size {} of the frame! Defaulting to the reported size.",
-            self.event_id, self.cobo_id, self.asad_id, self.frame_size, calc_frame_size);
             self.n_items = (self.frame_size as u32 * SIZE_UNIT
                 - self.header_size as u32 * SIZE_UNIT)
                 / self.item_size as u32;
@@ -238,21 +236,12 @@ impl GrawFrame {
 
             match datum.check_data() {
                 Ok(()) => (),
-                Err(e) => {
-                    tracing::warn!("Error received while parsing frame partial data: {}. This datum will not be recorded.", e);
+                Err(_) => {
                     continue;
                 }
             }
 
             self.data.push(datum);
-        }
-
-        if self.data.len() != (self.header.n_items as usize) {
-            tracing::warn!(
-                "A frame was read with an incorrect number of items -- Expected: {}, Found: {}",
-                self.header.n_items,
-                self.data.len()
-            );
         }
 
         Ok(())
