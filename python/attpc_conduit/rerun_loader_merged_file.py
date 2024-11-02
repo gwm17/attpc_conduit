@@ -12,8 +12,8 @@ from spyral import (
     EstimateParameters,
     DEFAULT_MAP,
 )
+from spyral.trace.trace_reader import create_reader
 from spyral_utils.plot import Histogrammer
-import h5py as h5
 import logging
 import argparse
 from pathlib import Path
@@ -133,32 +133,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def get_event_range(trace_file: h5.File) -> tuple[int, int]:
-    """
-    The merger doesn't use attributes for legacy reasons, so everything is stored in datasets. Use this to retrieve the min and max event numbers.
-
-    Parameters
-    ----------
-    trace_file: h5py.File
-        File handle to a hdf5 file with AT-TPC traces
-
-    Returns
-    -------
-    tuple[int, int]
-        A pair of integers (first event number, last event number)
-    """
-    try:
-        meta_group = trace_file["meta"]
-        if not isinstance(meta_group, h5.Group):
-            return (0, 0)
-        meta_data = meta_group["meta"]
-        if not isinstance(meta_data, h5.Dataset):
-            return (0, 0)
-        return (int(meta_data[0]), int(meta_data[2]))
-    except Exception:
-        return (0, 0)
-
-
 def main() -> None:
     """The entry point for the rerun-loader-merged-file script"""
     rng = np.random.default_rng()
@@ -174,35 +148,19 @@ def main() -> None:
             rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE
         )  # Indicates to Rerun that this file was not handled by this loader
 
-    file = h5.File(path)
-    get_group = None
-    try:
-        get_group = file["get"]
-    except Exception:
-        file.close()
-        exit(rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE)
-    if not isinstance(get_group, h5.Group):
-        file.close()
-        exit(rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE)
-    min_event, max_event = get_event_range(file)
-    if min_event == 0 and max_event == 0:
-        file.close()
+    reader = create_reader(path, 0)
+    if reader is None:
         exit(rr.EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE)
 
     rr.init(app_id, recording_id=args.recording_id)
     rr.send_blueprint(generate_default_blueprint(), make_active=True, make_default=True)
-    rr.stdout()  # type: ignore  # Required for custom file loaders
+    rr.stdout()  # Required for custom file loaders
 
     init_detector_bounds()
 
-    for event_id in range(min_event, max_event):
-        event_data = None
-        try:
-            event_data = get_group[f"evt{event_id}_data"]
-        except Exception:
-            continue
-
-        if not isinstance(event_data, h5.Dataset):
+    for event_id in reader.event_range():
+        event_data = reader.read_raw_get_event(event_id)
+        if event_data is None:
             continue
 
         pipeline.run(event_id, event_data[:], grammer, rng)
