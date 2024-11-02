@@ -1,10 +1,17 @@
 from .core.conduit_log import init_conduit_logger
-from .core.config import Config
 from .core.blueprint import generate_default_blueprint
 from .pipeline import init_detector_bounds, ConduitPipeline
 from .phases import PointcloudPhase, ClusterPhase, EstimationPhase
 from .core.histograms import initialize_default_histograms
 
+from spyral import (
+    DetectorParameters,
+    GetParameters,
+    ClusterParameters,
+    PadParameters,
+    EstimateParameters,
+    DEFAULT_MAP,
+)
 from spyral_utils.plot import Histogrammer
 import h5py as h5
 import logging
@@ -23,6 +30,51 @@ init_conduit_logger()
 logging.getLogger().addHandler(rr.LoggingHandler("logs/handler"))
 logging.getLogger().setLevel(logging.WARN)
 logging.info("This INFO log got added through the standard logging interface")
+
+pad_params = PadParameters(
+    pad_geometry_path=DEFAULT_MAP,
+    pad_time_path=DEFAULT_MAP,
+    pad_electronics_path=DEFAULT_MAP,
+    pad_scale_path=DEFAULT_MAP,
+)
+detector_params = DetectorParameters(
+    magnetic_field=3.0,
+    electric_field=45000.0,
+    detector_length=1000.0,
+    beam_region_radius=30.0,
+    micromegas_time_bucket=10,
+    window_time_bucket=560,
+    get_frequency=6.25,
+    garfield_file_path=Path("Invalid"),  # We don't use this
+    do_garfield_correction=False,
+)
+get_params = GetParameters(
+    baseline_window_scale=20.0,
+    peak_separation=50.0,
+    peak_prominence=20.0,
+    peak_max_width=100.0,
+    peak_threshold=25.0,
+)
+cluster_params = ClusterParameters(
+    min_cloud_size=50,
+    min_points=3,
+    min_size_scale_factor=0.05,
+    min_size_lower_cutoff=10,
+    cluster_selection_epsilon=10.0,
+    min_cluster_size_join=15,
+    circle_overlap_ratio=0.5,
+    outlier_scale_factor=0.5,
+)
+estimate_params = EstimateParameters(
+    min_total_trajectory_points=30, smoothing_factor=100.0
+)
+pipeline = ConduitPipeline(
+    [
+        PointcloudPhase(get_params, detector_params, pad_params),
+        ClusterPhase(cluster_params, detector_params),
+        EstimationPhase(estimate_params, detector_params),
+    ]
+)
 
 # The Rerun Viewer will always pass these two pieces of information:
 # 1. The path to be loaded, as a positional arg.
@@ -109,14 +161,6 @@ def get_event_range(trace_file: h5.File) -> tuple[int, int]:
 
 def main() -> None:
     """The entry point for the rerun-loader-merged-file script"""
-    config = Config(Path("config.json"))
-    pipeline = ConduitPipeline(
-        [
-            PointcloudPhase(config.get, config.detector, config.pads),
-            ClusterPhase(config.cluster, config.detector),
-            EstimationPhase(config.estimate, config.detector),
-        ]
-    )
     rng = np.random.default_rng()
 
     app_id = "attpc_hdf5_data"
