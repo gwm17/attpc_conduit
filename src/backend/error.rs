@@ -134,7 +134,7 @@ impl Display for ExporterReceiverError {
                 write!(f, "Bad frame found when reading GrawFile! Error: {}", frame)
             }
             Self::AddressParseError => write!(f, "Bad IP address and socket at ExporterReciever"),
-            Self::IOError(e) => write!(f, "GrawFile recieved an io error: {}!", e),
+            Self::IOError(e) => write!(f, "ExporterReceiver recieved an io error: {}!", e),
             Self::Timeout(e) => write!(f, "Attepmt to connect ExporterReceiver timed out! {}", e),
         }
     }
