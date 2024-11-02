@@ -1,4 +1,4 @@
-from attpc_conduit import (
+from . import (
     Conduit,
     init_conduit_logger,
     init_default_histograms,

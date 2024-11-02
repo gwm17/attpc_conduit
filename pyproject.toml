@@ -16,11 +16,13 @@ dependencies = [
     "rerun-sdk>=0.19.0",
     "h5py>=3.10",
     "attpc_spyral>=0.15.0",
-    "click>8.0.0",
+    "click>=8.0.0",
 ]
 
 [project.scripts]
 rerun-loader-merged-file = "attpc_conduit.rerun_loader_merged_file:main"
+gen-conduit-script = "attpc_conduit.generate_script:generate_script"
+run-conduit = "attpc_conduit.run_conduit:run_conduit"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
