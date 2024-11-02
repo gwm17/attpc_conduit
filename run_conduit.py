@@ -1,9 +1,15 @@
-from attpc_conduit import Conduit, init_conduit_logger
-from attpc_conduit.pipeline import init_detector_bounds, ConduitPipeline
-from attpc_conduit.phases import PointcloudPhase, EstimationPhase, ClusterPhase
-from attpc_conduit.core.static import PAD_ELEC_PATH
-from attpc_conduit.core.blueprint import generate_default_blueprint
-from attpc_conduit.core.histograms import initialize_default_histograms
+from attpc_conduit import (
+    Conduit,
+    init_conduit_logger,
+    init_default_histograms,
+    init_detector_bounds,
+    generate_default_blueprint,
+    PAD_ELEC_PATH,
+    PointcloudPhase,
+    EstimationPhase,
+    ClusterPhase,
+    ConduitPipeline,
+)
 
 from spyral import (
     PadParameters,
@@ -20,6 +26,7 @@ import rerun as rr
 import numpy as np
 import logging
 import click
+import time
 
 pad_params = PadParameters(
     pad_geometry_path=DEFAULT_MAP,
@@ -118,7 +125,7 @@ def run_conduit(viewer_ip: str, viewer_port: int):
     grammer = Histogrammer()
     rng = np.random.default_rng()
     # Add some histograms
-    initialize_default_histograms(grammer)
+    init_default_histograms(grammer)
 
     logging.info("Histograms are ready, setting up detector geometry...")
     # Setup detector bounds in rerun
@@ -131,8 +138,11 @@ def run_conduit(viewer_ip: str, viewer_port: int):
             event = conduit.poll_events()  # Poll the conduit
             if event is not None:
                 pipeline.run(event[0], event[1], grammer, rng)
+            # Allow CPU  to do other things, sleep for a milli (should be good for <100 Hz)
+            time.sleep(0.01)
         except KeyboardInterrupt:
             logging.info("Conduit recieved KeyboardInterrupt, shutting down.")
+            logging.info("Note: may take up to 2 minutes to shutdown.")
             break
         except Exception as e:
             logging.info(

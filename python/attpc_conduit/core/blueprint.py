@@ -4,6 +4,7 @@ from .static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM
 
 
 def generate_default_blueprint() -> bpt.Blueprint:
+    """Generate a default blueprint for Rerun"""
     return bpt.Blueprint(
         bpt.Horizontal(
             bpt.Tabs(

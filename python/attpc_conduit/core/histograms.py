@@ -2,7 +2,7 @@ from spyral_utils.plot.histogram import Histogrammer
 from .static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM, POLAR_HISTOGRAM
 
 
-def initialize_default_histograms(grammer: Histogrammer) -> None:
+def init_default_histograms(grammer: Histogrammer) -> None:
     """Create the default histograms
 
     Creates a particle ID, kinematics, and polar angle histogram

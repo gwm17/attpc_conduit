@@ -1,4 +1,4 @@
-from .core.phase import PhaseLike, PhaseResult
+from .phase import PhaseLike, PhaseResult
 from spyral_utils.plot import Histogrammer, Hist1D, Hist2D
 
 
