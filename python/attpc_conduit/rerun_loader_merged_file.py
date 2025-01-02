@@ -15,6 +15,7 @@ from spyral import (
     ClusterParameters,
     PadParameters,
     EstimateParameters,
+    OverlapJoinParameters,
     DEFAULT_MAP,
 )
 
@@ -67,8 +68,11 @@ cluster_params = ClusterParameters(
     min_size_scale_factor=0.05,
     min_size_lower_cutoff=10,
     cluster_selection_epsilon=10.0,
-    min_cluster_size_join=15,
-    circle_overlap_ratio=0.5,
+    overlap_join=OverlapJoinParameters(
+        min_cluster_size_join=15,
+        circle_overlap_ratio=0.5,
+    ),
+    continuity_join=None,
     outlier_scale_factor=0.5,
 )
 estimate_params = EstimateParameters(

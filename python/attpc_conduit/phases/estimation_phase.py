@@ -1,7 +1,7 @@
 from ..core.phase import PhaseLike, PhaseResult
 from ..core.static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM, POLAR_HISTOGRAM
 from spyral.core.config import EstimateParameters, DetectorParameters
-from spyral.core.estimator import estimate_physics
+from spyral.core.estimator import estimate_physics, EstimateResult
 
 from numpy.random import Generator
 import numpy as np
@@ -49,31 +49,7 @@ class EstimationPhase(PhaseLike):
         # Check that clusters exist
 
         result = PhaseResult(
-            {
-                "event": [],
-                "cluster_index": [],
-                "cluster_label": [],
-                "ic_amplitude": [],
-                "ic_centroid": [],
-                "ic_integral": [],
-                "ic_multiplicity": [],
-                "orig_run": [],
-                "orig_event": [],
-                "vertex_x": [],
-                "vertex_y": [],
-                "vertex_z": [],
-                "center_x": [],
-                "center_y": [],
-                "center_z": [],
-                "polar": [],
-                "azimuthal": [],
-                "brho": [],
-                "dEdx": [],
-                "sqrt_dEdx": [],
-                "dE": [],
-                "arclength": [],
-                "direction": [],
-            },
+            list(),
             True,
             payload.event_id,
         )
@@ -85,7 +61,7 @@ class EstimationPhase(PhaseLike):
         for cidx in range(len(payload.artifact)):
             local_cluster = payload.artifact[cidx]
             # Cluster is loaded do some analysis
-            estimate_physics(
+            est = estimate_physics(
                 cidx,
                 local_cluster,
                 -1,
@@ -96,31 +72,32 @@ class EstimationPhase(PhaseLike):
                 -1,
                 self.estimate_params,
                 self.det_params,
-                result.artifact,
             )
+            if est is not None:
+                result.artifact.append(est)
 
         # Log circles if they exist
-        n_circles = len(result.artifact["event"])
+        n_circles = len(result.artifact)
         circle_block_data = np.zeros((n_circles, 6))
         used_labels = []
-        for ridx in range(n_circles):
+        for ridx, estimate in enumerate(result.artifact):
             rho = (
-                result.artifact["brho"][ridx]
+                estimate.brho
                 / self.det_params.magnetic_field
                 * 1000.0
-                * np.sin(result.artifact["polar"][ridx])
+                * np.sin(estimate.polar)
             )
 
             # Log the circles
             circle_block_data[ridx, 3:] = np.array(
                 [
-                    result.artifact["center_x"][ridx],
-                    result.artifact["center_y"][ridx],
-                    result.artifact["vertex_z"][ridx],
+                    estimate.center_x,
+                    estimate.center_y,
+                    estimate.vertex_z,
                 ]
             )
             circle_block_data[ridx, :3] = np.array([rho, rho, 0.0])
-            used_labels.append(result.artifact["cluster_label"][ridx])
+            used_labels.append(estimate.cluster_label)
         rr.log(
             "/event/circles",
             rr.Ellipsoids3D(
@@ -132,18 +109,19 @@ class EstimationPhase(PhaseLike):
         )
 
         # Fill the histograms, but DO NOT LOG HERE
+        brho_array = np.array([est.brho for est in result.artifact])
+        polar_array = np.array([est.polar for est in result.artifact])
+        dedx_array = np.array([est.sqrt_dEdx for est in result.artifact])
         grammer.fill_hist2d(
             KINEMATICS_HISTOGRAM,
-            np.array(np.rad2deg(result.artifact["polar"])),
-            np.array(result.artifact["brho"]),
+            polar_array,
+            brho_array,
         )
         grammer.fill_hist2d(
             PARTICLE_ID_HISTOGRAM,
-            np.array(result.artifact["sqrt_dEdx"]),
-            np.array(result.artifact["brho"]),
+            dedx_array,
+            brho_array,
         )
-        grammer.fill_hist1d(
-            POLAR_HISTOGRAM, np.array(np.rad2deg(result.artifact["polar"]))
-        )
+        grammer.fill_hist1d(POLAR_HISTOGRAM, polar_array)
 
         return result

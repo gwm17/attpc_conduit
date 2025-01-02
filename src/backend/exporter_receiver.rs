@@ -37,16 +37,13 @@ async fn reciever_read_and_send(
     tx: &mpsc::Sender<GrawFrame>,
 ) -> Result<(), ExporterReceiverError> {
     let mut header_buffer: Vec<u8> = vec![0; (EXPECTED_HEADER_SIZE as u32 * SIZE_UNIT) as usize];
-    let mut frame_buffer: Vec<u8> = vec![];
     socket.read_exact(&mut header_buffer).await?;
     let header = GrawFrameHeader::from_buffer(&header_buffer)?;
-    frame_buffer.resize((header.frame_size * SIZE_UNIT) as usize, 0);
+    let mut frame_buffer: Vec<u8> = vec![0; (header.frame_size * SIZE_UNIT) as usize];
     socket.read_exact(&mut frame_buffer).await?;
     let mut frame = GrawFrame::new(header);
     frame.read(frame_buffer)?;
-    tx.send(frame)
-        .await
-        .expect("Couldn't internal send to merger from ECCReceiver");
+    tx.send(frame).await?;
     return Ok(());
 }
 

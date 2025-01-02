@@ -138,14 +138,9 @@ impl EventBuilder {
         self.event_cache.add_frame(&self.pad_map, new_frame)?;
 
         if self.event_cache.size() > MAX_FRAME_CACHE {
-            match self
-                .event_sender
+            self.event_sender
                 .send(self.event_cache.get_lru_event()?)
-                .await
-            {
-                Ok(()) => (),
-                Err(_) => return Err(EventBuilderError::ClosedChannel),
-            }
+                .await?
         }
 
         Ok(())

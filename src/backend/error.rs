@@ -2,6 +2,8 @@ use std::error::Error;
 use std::fmt::Display;
 
 use super::constants::*;
+use super::event::Event;
+use super::graw_frame::GrawFrame;
 
 /*
    GrawData errors
@@ -99,6 +101,7 @@ impl Error for GrawFrameError {}
 pub enum ExporterReceiverError {
     BadFrame(GrawFrameError),
     AddressParseError,
+    FailedSend(tokio::sync::mpsc::error::SendError<GrawFrame>),
     IOError(std::io::Error),
     Timeout(tokio::time::error::Elapsed),
 }
@@ -127,15 +130,22 @@ impl From<tokio::time::error::Elapsed> for ExporterReceiverError {
     }
 }
 
+impl From<tokio::sync::mpsc::error::SendError<GrawFrame>> for ExporterReceiverError {
+    fn from(value: tokio::sync::mpsc::error::SendError<GrawFrame>) -> Self {
+        Self::FailedSend(value)
+    }
+}
+
 impl Display for ExporterReceiverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BadFrame(frame) => {
-                write!(f, "Bad frame found when reading GrawFile! Error: {}", frame)
+                write!(f, "Bad frame found when reading GrawFile! Error: {frame}")
             }
+            Self::FailedSend(e) => write!(f, "Failed to send a frame to  the conduit: {e}"),
             Self::AddressParseError => write!(f, "Bad IP address and socket at ExporterReciever"),
-            Self::IOError(e) => write!(f, "ExporterReceiver recieved an io error: {}!", e),
-            Self::Timeout(e) => write!(f, "Attepmt to connect ExporterReceiver timed out! {}", e),
+            Self::IOError(e) => write!(f, "ExporterReceiver recieved an io error: {e}!"),
+            Self::Timeout(e) => write!(f, "Attepmt to connect ExporterReceiver timed out! {e}"),
         }
     }
 }
@@ -168,8 +178,8 @@ impl From<std::num::ParseIntError> for PadMapError {
 impl Display for PadMapError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PadMapError::IOError(e) => write!(f, "PadMap recieved an io error: {}", e),
-            PadMapError::ParsingError(e) => write!(f, "PadMap error recieved a parsing error: {}", e),
+            PadMapError::IOError(e) => write!(f, "PadMap recieved an io error: {e}"),
+            PadMapError::ParsingError(e) => write!(f, "PadMap error recieved a parsing error: {e}"),
             PadMapError::BadFileFormat => write!(f, "PadMap found a bad file format while reading the map file! Expected .csv without whitespaces")
         }
     }
@@ -190,8 +200,14 @@ pub enum EventError {
 impl Display for EventError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            EventError::InvalidHardware(cb, ad, ag, ch) => write!(f, "Event found hardware which does not correspond to a valid pad! CoBo: {}, AsAd: {}, AGET: {}, Channel: {}", cb, ad, ag, ch),
-            EventError::MismatchedEventID(given, exp) => write!(f, "Event was given a mismatched event id! Given: {}, Expected: {}", given, exp)
+            EventError::InvalidHardware(cb, ad, ag, ch) => write!(
+                f, 
+                "Event found hardware which does not correspond to a valid pad! CoBo: {cb}, AsAd: {ad}, AGET: {ag}, Channel: {ch}"
+            ),
+            EventError::MismatchedEventID(given, exp) => write!(
+                f,
+                "Event was given a mismatched event id! Given: {given}, Expected: {exp}"
+            ),
         }
     }
 }
@@ -207,6 +223,7 @@ pub enum EventBuilderError {
     EventError(EventError),
     BrokenCache,
     ClosedChannel,
+    FailedSend(tokio::sync::mpsc::error::SendError<Event>),
 }
 
 impl From<EventError> for EventBuilderError {
@@ -215,15 +232,22 @@ impl From<EventError> for EventBuilderError {
     }
 }
 
+impl From<tokio::sync::mpsc::error::SendError<Event>> for EventBuilderError {
+    fn from(value: tokio::sync::mpsc::error::SendError<Event>) -> Self {
+        Self::FailedSend(value)
+    }
+}
+
 impl Display for EventBuilderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::EventError(val) => write!(f, "The EventBuilder recieved an event error: {}", val),
+            Self::EventError(val) => write!(f, "The EventBuilder recieved an event error: {val}"),
             Self::BrokenCache => write!(
                 f,
                 "The EventBuilder event cache was broken (mismatched order/cache)!"
             ),
             Self::ClosedChannel => write!(f, "The EventBuilder had a closed channel!"),
+            Self::FailedSend(e) => write!(f, "EventBuilder failed to send Event: {e}"),
         }
     }
 }
@@ -240,8 +264,8 @@ pub enum ConduitError {
 impl Display for ConduitError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::BrokenReceiver(val) => write!(f, "A Receiver in the Conduit failed: {}", val),
-            Self::FailedEventBuilder(val) => write!(f, "The Conduit event builder failed: {}", val),
+            Self::BrokenReceiver(val) => write!(f, "A Receiver in the Conduit failed: {val}"),
+            Self::FailedEventBuilder(val) => write!(f, "The Conduit event builder failed: {val}"),
         }
     }
 }
