@@ -61,36 +61,32 @@ impl Event {
             ));
         }
 
-        if frame.header.cobo_id == COBO_WITH_TIMESTAMP {
+        if frame.header.cobo_id == COBO_WITH_TIMESTAMP && self.timestampother == 0 {
             // this cobo has a TS in sync with other DAQ
             self.timestampother = frame.header.event_time;
-        } else {
+        } else if self.timestamp == 0 {
             // all other cobos have the same TS from Mutant
             self.timestamp = frame.header.event_time;
         }
 
-        let mut hw_id: &HardwareID;
         for datum in frame.data.iter() {
-            hw_id = match pad_map.get_hardware_id(
+            if let Some(hw_id) = pad_map.get_hardware_id(
                 &frame.header.cobo_id,
                 &frame.header.asad_id,
                 &datum.aget_id,
                 &datum.channel,
             ) {
-                Some(hw) => hw,
-                None => continue,
-            };
-
-            match self.traces.get_mut(hw_id) {
-                Some(trace) => {
-                    trace[datum.time_bucket_id as usize] = datum.sample;
-                }
-                None => {
-                    //First time this pad found during event. Create a new array
-                    let mut trace: Array1<i16> =
-                        Array1::<i16>::zeros(NUMBER_OF_TIME_BUCKETS as usize);
-                    trace[datum.time_bucket_id as usize] = datum.sample;
-                    self.traces.insert(hw_id.clone(), trace);
+                match self.traces.get_mut(hw_id) {
+                    Some(trace) => {
+                        trace[datum.time_bucket_id as usize] = datum.sample;
+                    }
+                    None => {
+                        //First time this pad found during event. Create a new array
+                        let mut trace: Array1<i16> =
+                            Array1::<i16>::zeros(NUMBER_OF_TIME_BUCKETS as usize);
+                        trace[datum.time_bucket_id as usize] = datum.sample;
+                        self.traces.insert(hw_id.clone(), trace);
+                    }
                 }
             }
         }
