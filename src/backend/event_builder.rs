@@ -12,12 +12,11 @@ use super::graw_frame::GrawFrame;
 use super::message::ConduitMessage;
 use super::pad_map::PadMap;
 
-/// An EventCache is a storage system
-/// for event data. In live data taking, modules may fill their internal memory
-/// buffers at different rates, resulting in chunks of the same physical event
-/// being transmitted at different times. To handle this, we cache events, building
-/// multiple events at the same time. Once we reach a size limit, the least recently
-/// modified event is popped from the cache.
+/// An EventCache is a storage system for event data. In live data taking, modules
+/// may fill their internal memory buffers at different rates, resulting in chunks of
+/// the same physical event being transmitted at different times. To handle this, we
+/// cache events, building multiple events at the same time. Once we reach a size
+/// limit, the least recently modified event is popped from the cache.
 #[derive(Debug)]
 struct EventCache {
     events: FxHashMap<u32, Event>,
@@ -84,8 +83,9 @@ impl EventCache {
     }
 }
 
-/// EventBuilder receives GrawFrames from the various ECCReceivers and composes them into
-/// events. It then transmits events to the Conduit, where they can be polled by other pipelines.
+/// EventBuilder receives GrawFrames from the various receivers and composes them into
+/// events. It then transmits events to the Conduit, where they can be polled by other
+/// pipelines.
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct EventBuilder {
@@ -127,8 +127,8 @@ impl EventBuilder {
         }
     }
 
-    /// Reads the GrawFrame from an ECCReceiver and adds it to the event cache. If the cache is full,
-    /// an event is sent up to the conduit for exposure.
+    /// Reads the GrawFrame from an ECCReceiver and adds it to the event cache.
+    /// If the cache is full, an event is sent up to the conduit for exposure.
     async fn read_and_send(&mut self) -> Result<(), EventBuilderError> {
         let new_frame = match self.frame_receiver.recv().await {
             Some(frame) => frame,

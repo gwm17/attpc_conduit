@@ -15,7 +15,7 @@ import rerun as rr
 
 
 class ClusterPhase(PhaseLike):
-    """The default Spyral clustering phase, inheriting from PhaseLike
+    """The default Conduit clustering phase, inheriting from PhaseLike
 
     The goal of the clustering phase is to take in a point cloud
     and separate the points into individual particle trajectories. In

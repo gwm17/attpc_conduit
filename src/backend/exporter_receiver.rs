@@ -12,10 +12,14 @@ use super::error::{ConduitError, ExporterReceiverError};
 use super::graw_frame::{GrawFrame, GrawFrameHeader};
 use super::message::ConduitMessage;
 
+/// Just to make sure we never get hung on connecting
 const CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+/// Convert from GRAW size to real bytes
 const HEADER_SIZE_BYTES: usize = ((EXPECTED_HEADER_SIZE as u32) * SIZE_UNIT) as usize;
 
-pub async fn run_exporter_receiver(
+/// This is the main loop of the receiver task, using a tokio::select macro to wait on
+/// either data to be available on the TcpStream or a cancel message
+async fn run_exporter_receiver(
     ip: &str,
     port: &str,
     tx: mpsc::Sender<GrawFrame>,
@@ -37,6 +41,7 @@ pub async fn run_exporter_receiver(
     }
 }
 
+/// Read a single frame off the TcpStream
 async fn reciever_read_frame(
     socket: &mut TcpStream,
 ) -> Result<Option<GrawFrame>, ExporterReceiverError> {

@@ -45,9 +45,11 @@ fn generate_uuid(cobo_id: &u8, asad_id: &u8, aget_id: &u8, channel_id: &u8) -> u
         + (*cobo_id as u64) * 1_000_000;
 }
 
-/// PadMap contains the mapping of the individual hardware identifiers (CoBo ID, AsAd ID, AGET ID, AGET channel) to AT-TPC pad number.
-/// This can change from experiment to experiment, so PadMap reads in a CSV file where each row contains 5 elements. The first four are the
-/// hardware identifiers (in the order listed previously) and the fifth is the pad number.
+/// PadMap contains the mapping of the individual hardware identifiers (CoBo ID,
+/// AsAd ID, AGET ID, AGET channel) to AT-TPC pad number. This can change from
+/// experiment to experiment, so PadMap reads in a CSV file where each row contains 5
+/// elements. The first four are the hardware identifiers (in the order listed
+/// previously) and the fifth is the pad number.
 #[derive(Debug, Clone, Default)]
 pub struct PadMap {
     map: FxHashMap<u64, HardwareID>,
@@ -96,8 +98,8 @@ impl PadMap {
         Ok(pm)
     }
 
-    /// Get the full HardwareID for a given set of hardware identifiers. If returns None the identifiers given do
-    /// not exist in the map
+    /// Get the full HardwareID for a given set of hardware identifiers. If returns
+    /// None the identifiers given do not exist in the map
     pub fn get_hardware_id(
         &self,
         cobo_id: &u8,

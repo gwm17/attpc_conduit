@@ -1,4 +1,4 @@
-from attpc_conduit._attpc_conduit import Conduit
+from ._attpc_conduit import Conduit
 from .core.conduit_log import init_conduit_logger
 from .core.pipeline import ConduitPipeline, init_detector_bounds
 from .core.histograms import init_default_histograms

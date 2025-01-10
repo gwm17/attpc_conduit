@@ -42,6 +42,7 @@ impl GrawData {
     }
 }
 
+/// Unused, but maybe someday someone will care
 #[allow(dead_code)]
 fn parse_bitsets(cursor: &mut Cursor<&[u8]>) -> Result<Vec<BitVec<u8>>, GrawFrameError> {
     let mut sets: Vec<BitVec<u8>> = Vec::with_capacity(4);
@@ -60,6 +61,7 @@ fn parse_bitsets(cursor: &mut Cursor<&[u8]>) -> Result<Vec<BitVec<u8>>, GrawFram
     return Ok(sets);
 }
 
+/// Unused, but maybe someday someone will care
 #[allow(dead_code)]
 fn parse_multiplicity(cursor: &mut Cursor<&[u8]>) -> Result<Vec<u16>, GrawFrameError> {
     let mut mults: Vec<u16> = Vec::with_capacity(4);
@@ -90,8 +92,8 @@ impl From<GrawFrameHeader> for FrameMetadata {
     }
 }
 
-/// GrawFrameHeaders contain the full metadata description of the GrawFrame. They are most commonly used to
-/// know how large the total frame size is
+/// GrawFrameHeaders contain the full metadata description of the GrawFrame. They are
+/// most commonly used to know how large the total frame size is
 #[derive(Debug, Clone, Default)]
 pub struct GrawFrameHeader {
     pub meta_type: u8,   //set to 0x6 ?
@@ -112,7 +114,7 @@ pub struct GrawFrameHeader {
 }
 
 impl GrawFrameHeader {
-    /// Sanity Checks
+    /// Sanity Checks to validate the frame
     pub fn check_header(&mut self, buffer_length: u32) -> Result<(), GrawFrameError> {
         if self.meta_type != EXPECTED_META_TYPE {
             return Err(GrawFrameError::IncorrectMetaType(self.meta_type));
@@ -176,21 +178,25 @@ impl GrawFrameHeader {
     }
 }
 
-/// A GrawFrame is the basic data chunk of the .graw format. It contains the data from a AsAd on a CoBo for a specific
-/// event. GrawFrames are sized by 256 bit chunking. The header comprises one 256 bit chunks, and the body can contain several 256 bit chunks.
+/// A GrawFrame is the basic data chunk of the GRAW format. It contains the data from
+/// a AsAd on a CoBo for a specific event. GrawFrames are sized by 256 bit chunking.
+/// The header comprises one 256 bit chunks, and the body can contain several 256 bit
+/// chunks.
+///
 /// ## Note
-/// Using 256 bit sizing is interesting because it often results in padding in both the body and the header. (It is done for performance reasons in the acquisition)
+/// Using 256 bit sizing is interesting because it often results in padding in both the
+/// body and the header. (It is done for performance reasons in the acquisition)
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct GrawFrame {
     pub header: GrawFrameHeader,
-    hit_patterns: Vec<BitVec<u8>>,
-    multiplicity: Vec<u16>,
+    hit_patterns: Vec<BitVec<u8>>, // idk again maybe someone will care
+    multiplicity: Vec<u16>,        // idk again maybe someone will care
     pub data: Vec<GrawData>,
 }
 
 impl GrawFrame {
-    /// Default constructor
+    /// Make a new frame frmo a header
     pub fn new(header: GrawFrameHeader) -> GrawFrame {
         GrawFrame {
             header,
@@ -200,14 +206,15 @@ impl GrawFrame {
         }
     }
 
+    /// Convert a binary buffer to a GRAW frame
     pub fn read(&mut self, buffer: &[u8]) -> Result<(), GrawFrameError> {
         let buffer_length: u64 = buffer.len() as u64;
         let mut cursor = Cursor::new(buffer);
 
         self.header.check_header(buffer_length as u32)?;
+        // Dont read the padding! Use actual size from items
         let end_position =
-            cursor.position() + (self.header.n_items * self.header.item_size as u32) as u64; // Dont read the padding! Use actual size from items
-
+            cursor.position() + (self.header.n_items * self.header.item_size as u32) as u64;
         if self.header.frame_type == EXPECTED_FRAME_TYPE_PARTIAL {
             self.extract_partial_data(&mut cursor, end_position)?;
         } else if self.header.frame_type == EXPECTED_FRAME_TYPE_FULL {
@@ -217,7 +224,8 @@ impl GrawFrame {
         Ok(())
     }
 
-    /// Extract the data from the frame body. Idk what partial refers to here. Parsing done in 32-bit data words
+    /// Extract the data from the frame body. Idk what partial refers to here.
+    /// Parsing done in 32-bit data words
     fn extract_partial_data(
         &mut self,
         cursor: &mut Cursor<&[u8]>,
@@ -248,7 +256,8 @@ impl GrawFrame {
         Ok(())
     }
 
-    /// Extract the data from the frame body. Idk what full refers to here. Parsing done in 16-bit data words
+    /// Extract the data from the frame body. Idk what full refers to here.
+    /// Parsing done in 16-bit data words
     fn extract_full_data(
         &mut self,
         cursor: &mut Cursor<&[u8]>,

@@ -5,9 +5,6 @@ use super::constants::*;
 use super::event::Event;
 use super::graw_frame::GrawFrame;
 
-/*
-   GrawData errors
-*/
 #[derive(Debug, Clone)]
 pub enum GrawDataError {
     BadAgetID(u8),
@@ -31,9 +28,6 @@ impl Display for GrawDataError {
 
 impl Error for GrawDataError {}
 
-/*
-   GrawFrame errors
-*/
 #[derive(Debug)]
 pub enum GrawFrameError {
     IOError(std::io::Error),
@@ -93,9 +87,6 @@ impl Display for GrawFrameError {
 
 impl Error for GrawFrameError {}
 
-/*
-   ExporterReceiver errors
-*/
 
 #[derive(Debug)]
 pub enum ExporterReceiverError {
@@ -152,10 +143,6 @@ impl Display for ExporterReceiverError {
 
 impl Error for ExporterReceiverError {}
 
-/*
-   PadMap errors
-*/
-
 #[derive(Debug)]
 pub enum PadMapError {
     IOError(std::io::Error),
@@ -187,9 +174,6 @@ impl Display for PadMapError {
 
 impl Error for PadMapError {}
 
-/*
-   Event errors
-*/
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum EventError {
@@ -214,9 +198,6 @@ impl Display for EventError {
 
 impl Error for EventError {}
 
-/*
-   EventBuilder errors
-*/
 
 #[derive(Debug)]
 pub enum EventBuilderError {

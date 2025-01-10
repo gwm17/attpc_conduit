@@ -21,24 +21,24 @@ def init_detector_bounds() -> None:
 class ConduitPipeline:
     """A customized representation of an analysis pipeline in Spyral
 
-    This pipeline is customized to run with the conduit. It is a little different from the
-    "normal" pipeline. But the core concept is the same. The main difference is that this pipeline
-    works event-by-event rather than run-by-run
+    This pipeline is customized to run with the conduit. It is a little different from
+    the Spyral pipeline. But the core concept is the same. The main difference is that
+    this pipeline works event-by-event rather than run-by-run
 
     Parameters
     ----------
     phases: list[PhaseLike]
-        The Phases of the analysis pipeline
+        The Phases of the analysis pipeline. Note that these are conduit PhaseLikes
+        *not* attpc_spyral PhaseLikes.
 
     Attributes
     ----------
     phases: list[PhaseLike]
-        The Phases of the analysis pipeline
+        The Phases of the analysis pipeline. Note that these are conduit PhaseLikes
+        *not* attpc_spyral PhaseLikes.
 
     Methods
     -------
-    validate()
-        Validate the pipeline by comparing the schema of the phases.
     run(event_id, event, grammer, seed)
         Run the pipeline for an event
 
@@ -57,20 +57,18 @@ class ConduitPipeline:
         grammer: Histogrammer,
         rng: np.random.Generator,
     ) -> None:
-        """Run the pipeline for a set of runs
+        """Run the pipeline for a single event
 
-        Each Phase is only run if it is active. Any artifact requested
-        from an inactive Phase is expected to have already been created.
+        The conduit pipeline runs on single events.
 
         Parameters
         ----------
-        run_list: list[int]
-            List of run numbers to be processed
-        msg_queue: multiprocessing.SimpleQueue
-            A queue to transmit progress messages through
+        event_id: int
+            The event number
+        event: numpy.ndarray
+            The trace matrix of the event to be analyzed
         seed: numpy.random.SeedSequence
             A seed to initialize the pipeline random number generator
-
         """
         # Clear the previous event data
         rr.set_time_sequence("event_time", event_id)

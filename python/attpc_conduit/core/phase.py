@@ -36,29 +36,23 @@ class PhaseResult:
 class PhaseLike(ABC):
     """Abstract Base Class all Phases inherit from
 
+    This is a different definition from Spyral, customized to better fit the needs of
+    the conduit. Spyral operates at the file level, while the  conduit must operate
+    on single event streams.
+
     Parameters
     ----------
     name: str
         The name of the Phase (Pointcloud, Cluster, Estimation, etc.)
-    incoming_schema: ArtifactSchema | None
-        Optional schema describing the expected incoming artifact (payload).
-        Default is None.
-    outgoing_schema: ArtifactSchema | None
-        Optional schema describing the expected outgoing artifact (result).
-        Default is None.
 
     Attributes
     ----------
     name: str
         The name of the Phase (Pointcloud, Cluster, Estimation, etc.)
-    incoming_schema: ArtifactSchema | None
-        Schema describing the expected incoming artifact (payload).
-    outgoing_schema: ArtifactSchema | None
-        Schema describing the expected outgoing artifact (result).
 
     Methods
     -------
-    run(payload, workspace_path, msg_queue, rng)
+    run(payload, grammer, rng)
         Run the phase. This is an abstract method.
     """
 
@@ -86,10 +80,8 @@ class PhaseLike(ABC):
         ----------
         payload: PhaseResult
             The result from the previous Phase
-        workspace_path: pathlib.Path
-            The path to the workspace
-        msg_queue: multiprocessing.SimpleQueue
-            The queue for submitting progress messages
+        grammer: Histogrammer
+            The histogram manager
         rng: numpy.random.Generator
             A random number generator
 

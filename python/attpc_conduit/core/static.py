@@ -1,3 +1,5 @@
+"""Some constants used by the analysis pipeline"""
+
 from importlib.resources import files, as_file
 
 UNSIGNED_NOISE_LABEL = 4096

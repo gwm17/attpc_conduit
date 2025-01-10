@@ -1,7 +1,7 @@
 from ..core.phase import PhaseLike, PhaseResult
 from ..core.static import PARTICLE_ID_HISTOGRAM, KINEMATICS_HISTOGRAM, POLAR_HISTOGRAM
 from spyral.core.config import EstimateParameters, DetectorParameters
-from spyral.core.estimator import estimate_physics, EstimateResult
+from spyral.core.estimator import estimate_physics
 
 from numpy.random import Generator
 import numpy as np
@@ -10,7 +10,7 @@ import rerun as rr
 
 
 class EstimationPhase(PhaseLike):
-    """The default Spyral estimation phase, inheriting from PhaseLike
+    """The default Conduit estimation phase, inheriting from PhaseLike
 
     The goal of the estimation phase is to get reasonable estimations of
     the physical properties of a particle trajectory (B&rho; , reaction angle, etc.)

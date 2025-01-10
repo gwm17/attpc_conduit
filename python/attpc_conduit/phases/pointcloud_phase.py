@@ -20,7 +20,7 @@ import rerun as rr
 
 
 class PointcloudPhase(PhaseLike):
-    """The point cloud phase, inheriting from PhaseLike
+    """The Conduit point cloud phase, inheriting from PhaseLike
 
     The goal of the point cloud phase is to convert AT-TPC trace data
     into point clouds. It uses a combination of Fourier transform baseline removal
@@ -31,8 +31,6 @@ class PointcloudPhase(PhaseLike):
     ----------
     get_params: GetParameters
         Parameters controlling the GET-DAQ signal analysis
-    frib_params: FribParameters
-        Parameters controlling the FRIBDAQ signal analysis
     detector_params: DetectorParameters
         Parameters describing the detector
     pad_params: PadParameters
@@ -42,8 +40,6 @@ class PointcloudPhase(PhaseLike):
     ----------
     get_params: GetParameters
         Parameters controlling the GET-DAQ signal analysis
-    frib_params: FribParameters
-        Parameters controlling the FRIBDAQ signal analysis
     det_params: DetectorParameters
         Parameters describing the detector
     pad_map: PadMap

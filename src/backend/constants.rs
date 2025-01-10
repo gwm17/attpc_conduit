@@ -25,4 +25,4 @@ pub const MAX_FRAME_CACHE: usize = 440; // Around 10 events
 
 // GETDAQ constants
 pub const MM_IP_SUBNET: &str = "192.168.41"; // Subnet for all the MacMini's in AT-TPC
-pub const EXPORTER_PORT: &str = "46491";
+pub const EXPORTER_PORT: &str = "46491"; // This maybe should be exposed? idk

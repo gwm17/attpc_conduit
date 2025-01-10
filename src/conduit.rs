@@ -137,7 +137,7 @@ impl Conduit {
         }
     }
 
-    /// See if the conduit is connected to it's envoys
+    /// See if the conduit is connected to it's receivers
     pub fn is_connected(&self) -> bool {
         self.handles.is_some()
     }
