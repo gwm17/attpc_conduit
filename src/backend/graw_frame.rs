@@ -43,7 +43,7 @@ impl GrawData {
 }
 
 #[allow(dead_code)]
-fn parse_bitsets(cursor: &mut Cursor<Vec<u8>>) -> Result<Vec<BitVec<u8>>, GrawFrameError> {
+fn parse_bitsets(cursor: &mut Cursor<&[u8]>) -> Result<Vec<BitVec<u8>>, GrawFrameError> {
     let mut sets: Vec<BitVec<u8>> = Vec::with_capacity(4);
     let mut storage_index: usize;
     let mut byte: u8;
@@ -61,7 +61,7 @@ fn parse_bitsets(cursor: &mut Cursor<Vec<u8>>) -> Result<Vec<BitVec<u8>>, GrawFr
 }
 
 #[allow(dead_code)]
-fn parse_multiplicity(cursor: &mut Cursor<Vec<u8>>) -> Result<Vec<u16>, GrawFrameError> {
+fn parse_multiplicity(cursor: &mut Cursor<&[u8]>) -> Result<Vec<u16>, GrawFrameError> {
     let mut mults: Vec<u16> = Vec::with_capacity(4);
     let mut mult: u16;
     for _ in 0..4 {
@@ -117,7 +117,8 @@ impl GrawFrameHeader {
         if self.meta_type != EXPECTED_META_TYPE {
             return Err(GrawFrameError::IncorrectMetaType(self.meta_type));
         }
-        if self.frame_size * SIZE_UNIT != buffer_length {
+        let body_size = self.frame_size - (self.header_size as u32);
+        if body_size * SIZE_UNIT != buffer_length {
             return Err(GrawFrameError::IncorrectFrameSize(
                 self.frame_size,
                 buffer_length,
@@ -152,7 +153,7 @@ impl GrawFrameHeader {
     }
 
     /// Extract the header from a buffer
-    pub fn from_buffer(buf: &Vec<u8>) -> Result<GrawFrameHeader, GrawFrameError> {
+    pub fn from_buffer(buf: &[u8]) -> Result<GrawFrameHeader, GrawFrameError> {
         let mut cursor = Cursor::new(buf);
         let mut header = GrawFrameHeader::default();
         header.meta_type = cursor.read_u8()?;
@@ -199,7 +200,7 @@ impl GrawFrame {
         }
     }
 
-    pub fn read(&mut self, buffer: Vec<u8>) -> Result<(), GrawFrameError> {
+    pub fn read(&mut self, buffer: &[u8]) -> Result<(), GrawFrameError> {
         let buffer_length: u64 = buffer.len() as u64;
         let mut cursor = Cursor::new(buffer);
 
@@ -219,7 +220,7 @@ impl GrawFrame {
     /// Extract the data from the frame body. Idk what partial refers to here. Parsing done in 32-bit data words
     fn extract_partial_data(
         &mut self,
-        cursor: &mut Cursor<Vec<u8>>,
+        cursor: &mut Cursor<&[u8]>,
         end_position: u64,
     ) -> Result<(), GrawFrameError> {
         let mut datum: GrawData;
@@ -250,7 +251,7 @@ impl GrawFrame {
     /// Extract the data from the frame body. Idk what full refers to here. Parsing done in 16-bit data words
     fn extract_full_data(
         &mut self,
-        cursor: &mut Cursor<Vec<u8>>,
+        cursor: &mut Cursor<&[u8]>,
         end_position: u64,
     ) -> Result<(), GrawFrameError> {
         let mut datum: GrawData;

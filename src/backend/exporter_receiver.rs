@@ -13,6 +13,7 @@ use super::graw_frame::{GrawFrame, GrawFrameHeader};
 use super::message::ConduitMessage;
 
 const CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+const HEADER_SIZE_BYTES: usize = ((EXPECTED_HEADER_SIZE as u32) * SIZE_UNIT) as usize;
 
 pub async fn run_exporter_receiver(
     ip: &str,
@@ -27,24 +28,29 @@ pub async fn run_exporter_receiver(
             _ = cancel.recv() => {
                 return Ok(());
             },
-            _ = reciever_read_and_send(&mut socket, &tx) => ()
+            _ = socket.readable() => {
+                if let Some(frame) = reciever_read_frame(&mut socket).await? {
+                    tx.send(frame).await?;
+                }
+            }
         }
     }
 }
 
-async fn reciever_read_and_send(
+async fn reciever_read_frame(
     socket: &mut TcpStream,
-    tx: &mpsc::Sender<GrawFrame>,
-) -> Result<(), ExporterReceiverError> {
-    let mut header_buffer: Vec<u8> = vec![0; (EXPECTED_HEADER_SIZE as u32 * SIZE_UNIT) as usize];
-    socket.read_exact(&mut header_buffer).await?;
-    let header = GrawFrameHeader::from_buffer(&header_buffer)?;
-    let mut frame_buffer: Vec<u8> = vec![0; (header.frame_size * SIZE_UNIT) as usize];
-    socket.read_exact(&mut frame_buffer).await?;
+) -> Result<Option<GrawFrame>, ExporterReceiverError> {
+    let message_size = socket.read_u64_le().await?;
+    // Socket wasn't actually ready, maybe?
+    if message_size == 0 {
+        return Ok(None);
+    }
+    let mut message_buffer: Vec<u8> = vec![0; message_size as usize];
+    socket.read_exact(&mut message_buffer).await?;
+    let header = GrawFrameHeader::from_buffer(&message_buffer[0..HEADER_SIZE_BYTES])?;
     let mut frame = GrawFrame::new(header);
-    frame.read(frame_buffer)?;
-    tx.send(frame).await?;
-    return Ok(());
+    frame.read(&message_buffer[HEADER_SIZE_BYTES..])?;
+    return Ok(Some(frame));
 }
 
 /// Helper function to start and spawn all DataExporter communication tasks
