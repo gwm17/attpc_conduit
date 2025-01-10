@@ -54,7 +54,7 @@ impl Conduit {
 
     /// Initialize and start all of the backend services
     pub fn connect(&mut self) {
-        if !self.handles.is_none() {
+        if self.handles.is_some() {
             log::warn!("Could not start services, as they're already started!");
             return;
         }

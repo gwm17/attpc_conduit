@@ -6,23 +6,12 @@ use super::constants::*;
 use super::error::{GrawDataError, GrawFrameError};
 
 /// Data from a single time-bucket (sampled point along the waveform)
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct GrawData {
     pub aget_id: u8,
     pub channel: u8,
     pub time_bucket_id: u16,
     pub sample: i16,
-}
-
-impl Default for GrawData {
-    fn default() -> Self {
-        GrawData {
-            aget_id: 0,
-            channel: 0,
-            time_bucket_id: 0,
-            sample: 0,
-        }
-    }
 }
 
 impl GrawData {
@@ -58,7 +47,7 @@ fn parse_bitsets(cursor: &mut Cursor<&[u8]>) -> Result<Vec<BitVec<u8>>, GrawFram
         sets.push(aget_bits);
     }
 
-    return Ok(sets);
+    Ok(sets)
 }
 
 /// Unused, but maybe someday someone will care
@@ -71,7 +60,7 @@ fn parse_multiplicity(cursor: &mut Cursor<&[u8]>) -> Result<Vec<u16>, GrawFrameE
         mults.push(mult);
     }
 
-    return Ok(mults);
+    Ok(mults)
 }
 
 /// FrameMetadata provides the GrawFile a way of querying the event (hardware-level)
@@ -134,11 +123,10 @@ impl GrawFrameHeader {
         if self.header_size != EXPECTED_HEADER_SIZE {
             return Err(GrawFrameError::IncorrectHeaderSize(self.header_size));
         }
-        if self.frame_type == EXPECTED_FRAME_TYPE_FULL && self.item_size != EXPECTED_ITEM_SIZE_FULL
-        {
-            return Err(GrawFrameError::IncorrectItemSize(self.item_size));
-        } else if self.frame_type == EXPECTED_FRAME_TYPE_PARTIAL
-            && self.item_size != EXPECTED_ITEM_SIZE_PARTIAL
+        if (self.frame_type == EXPECTED_FRAME_TYPE_FULL
+            && self.item_size != EXPECTED_ITEM_SIZE_FULL)
+            || (self.frame_type == EXPECTED_FRAME_TYPE_PARTIAL
+                && self.item_size != EXPECTED_ITEM_SIZE_PARTIAL)
         {
             return Err(GrawFrameError::IncorrectItemSize(self.item_size));
         }
@@ -147,8 +135,7 @@ impl GrawFrameHeader {
             / (SIZE_UNIT as f64))
             .ceil() as u32;
         if self.frame_size != calc_frame_size {
-            self.n_items = (self.frame_size as u32 * SIZE_UNIT
-                - self.header_size as u32 * SIZE_UNIT)
+            self.n_items = (self.frame_size * SIZE_UNIT - self.header_size as u32 * SIZE_UNIT)
                 / self.item_size as u32;
         }
         Ok(())

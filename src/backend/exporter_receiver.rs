@@ -55,7 +55,7 @@ async fn reciever_read_frame(
     let header = GrawFrameHeader::from_buffer(&message_buffer[0..HEADER_SIZE_BYTES])?;
     let mut frame = GrawFrame::new(header);
     frame.read(&message_buffer[HEADER_SIZE_BYTES..])?;
-    return Ok(Some(frame));
+    Ok(Some(frame))
 }
 
 /// Helper function to start and spawn all DataExporter communication tasks
@@ -79,5 +79,5 @@ pub fn startup_exporter_recievers(
         handles.push(handle);
     }
 
-    return handles;
+    handles
 }

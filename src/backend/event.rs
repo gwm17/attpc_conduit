@@ -46,7 +46,7 @@ impl Event {
             trace.move_into(&mut trace_slice);
         }
 
-        return data_matrix;
+        data_matrix
     }
 
     /// Add a frame to the event. Sanity checks can return errors
@@ -81,7 +81,7 @@ impl Event {
                 None => continue,
             };
 
-            match self.traces.get_mut(&hw_id) {
+            match self.traces.get_mut(hw_id) {
                 Some(trace) => {
                     trace[datum.time_bucket_id as usize] = datum.sample;
                 }

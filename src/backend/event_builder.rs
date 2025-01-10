@@ -67,9 +67,11 @@ impl EventCache {
     /// Returns the least recently used event
     pub fn get_lru_event(&mut self) -> Result<Event, EventBuilderError> {
         if let Some(least_recently_used) = self.order.pop_front() {
-            Ok(self.events.remove(&least_recently_used).expect(&format!(
-                "Some how frame cache didn't have event {least_recently_used}!"
-            )))
+            if let Some(event) = self.events.remove(&least_recently_used) {
+                Ok(event)
+            } else {
+                Err(EventBuilderError::BrokenCache)
+            }
         } else {
             Err(EventBuilderError::BrokenCache)
         }
@@ -122,21 +124,21 @@ impl EventBuilder {
                 _ = cancel.recv() => {
                     return Ok(());
                 }
-                _ = self.read_and_send() => ()
+                maybe = self.frame_receiver.recv() => {
+                    if let Some(frame) = maybe {
+                        self.build(frame).await?;
+                    } else {
+                        return Err(EventBuilderError::ClosedChannel);
+                    }
+                }
             }
         }
     }
 
-    /// Reads the GrawFrame from an ECCReceiver and adds it to the event cache.
+    /// Takes a GrawFrame and adds it to the event cache.
     /// If the cache is full, an event is sent up to the conduit for exposure.
-    async fn read_and_send(&mut self) -> Result<(), EventBuilderError> {
-        let new_frame = match self.frame_receiver.recv().await {
-            Some(frame) => frame,
-            None => return Err(EventBuilderError::ClosedChannel),
-        };
-
-        self.event_cache.add_frame(&self.pad_map, new_frame)?;
-
+    async fn build(&mut self, frame: GrawFrame) -> Result<(), EventBuilderError> {
+        self.event_cache.add_frame(&self.pad_map, frame)?;
         if self.event_cache.size() > MAX_FRAME_CACHE {
             self.event_sender
                 .send(self.event_cache.get_lru_event()?)

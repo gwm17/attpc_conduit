@@ -39,10 +39,10 @@ impl Hash for HardwareID {
 
 /// Generate a unique id number for a given hardware location
 fn generate_uuid(cobo_id: &u8, asad_id: &u8, aget_id: &u8, channel_id: &u8) -> u64 {
-    return (*channel_id as u64)
+    (*channel_id as u64)
         + (*aget_id as u64) * 100
         + (*asad_id as u64) * 10_000
-        + (*cobo_id as u64) * 1_000_000;
+        + (*cobo_id as u64) * 1_000_000
 }
 
 /// PadMap contains the mapping of the individual hardware identifiers (CoBo ID,
@@ -108,7 +108,6 @@ impl PadMap {
         channel_id: &u8,
     ) -> Option<&HardwareID> {
         let uuid = generate_uuid(cobo_id, asad_id, aget_id, channel_id);
-        let val = self.map.get(&uuid);
-        return val;
+        self.map.get(&uuid)
     }
 }
