@@ -14,6 +14,6 @@ byteorder = "1.5.0"
 fxhash = "0.2.1"
 log = "0.4.22"
 numpy = "0.22.1"
-pyo3 = { version = "0.22.5", features = ["macros"] }
+pyo3 = { version = "0.22.6", features = ["macros"] }
 pyo3-log = "0.11.0"
-tokio = { version = "1.40.0" , features = ["full"] }
+tokio = { version = "1.42.0" , features = ["full"] }
