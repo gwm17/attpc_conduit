@@ -1,0 +1,37 @@
+name: Format and Lint
+on:
+  push:
+    branches:
+      - '*'
+      - '!gh-pages'
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install ruff
+        uses: astral-sh/ruff-action@v3
+      - name: Install maturin
+        uses: PyO3/maturin-action@v1
+      - name: Install deps and build
+        run: maturin develop
+      - name: Check lint
+        run: ruff check ./python/attpc_conduit
+      - name: Check format
+        run: ruff format --check ./python/attpc_conduit
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update rust
+        run: rustup update
+      - name: Check format
+        run: cargo fmt -- --check
+      - name: Run clippy
+        run: cargo clippy
+
+
