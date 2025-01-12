@@ -87,7 +87,6 @@ impl Display for GrawFrameError {
 
 impl Error for GrawFrameError {}
 
-
 #[derive(Debug)]
 pub enum ExporterReceiverError {
     BadFrame(GrawFrameError),
@@ -185,7 +184,7 @@ impl Display for EventError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EventError::InvalidHardware(cb, ad, ag, ch) => write!(
-                f, 
+                f,
                 "Event found hardware which does not correspond to a valid pad! CoBo: {cb}, AsAd: {ad}, AGET: {ag}, Channel: {ch}"
             ),
             EventError::MismatchedEventID(given, exp) => write!(
@@ -197,7 +196,6 @@ impl Display for EventError {
 }
 
 impl Error for EventError {}
-
 
 #[derive(Debug)]
 pub enum EventBuilderError {
