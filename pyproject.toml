@@ -29,3 +29,8 @@ features = ["pyo3/extension-module"]
 module-name = "attpc_conduit._attpc_conduit"
 python-source = "python"
 profile = "release"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.1",
+]
