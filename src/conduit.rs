@@ -108,6 +108,10 @@ impl Conduit {
         self.cancel_sender
             .send(ConduitMessage::Cancel)
             .expect("Somehow all the services were already dead");
+        // If we don't sleep a bit sometimes the threads get stuck??
+        // This is a short-term solution at best... Probably an
+        // indicator of a bug in the underlying shutdown model...
+        std::thread::sleep(std::time::Duration::from_secs(1));
         for handle in handles {
             match self.runtime.block_on(handle) {
                 Ok(res) => match res {
