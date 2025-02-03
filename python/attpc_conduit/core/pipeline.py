@@ -75,7 +75,6 @@ class ConduitPipeline:
         rr.log("/event", rr.Clear(recursive=True))
         result = PhaseResult(artifact=event, successful=True, event_id=event_id)
         for phase in self.phases:
-            print("Running..")
             result = phase.run(result, grammer, rng)
 
         # Now we can log histograms. This way they only ever get logged once an event
