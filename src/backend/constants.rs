@@ -20,9 +20,6 @@ pub const NUMBER_OF_CHANNELS: u8 = 68;
 pub const NUMBER_OF_TIME_BUCKETS: u32 = 512;
 pub const NUMBER_OF_MATRIX_COLUMNS: usize = NUMBER_OF_TIME_BUCKETS as usize + 5; // cobo, asad, aget, channel, pad, buckets
 
-// Algorithm constants
-pub const MAX_FRAME_CACHE: usize = 440; // Around 10 events
-
 // GETDAQ constants
 pub const MM_IP_SUBNET: &str = "192.168.41"; // Subnet for all the MacMini's in AT-TPC
 pub const EXPORTER_PORT: &str = "46491"; // This maybe should be exposed? idk

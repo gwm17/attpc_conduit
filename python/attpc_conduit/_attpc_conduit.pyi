@@ -16,7 +16,7 @@ class Conduit:
 
     Methods
     -------
-    connect()
+    connect(max_cache_size)
         Start the Conduit, creating the communication channels and async tasks.
     disconnect()
         Stop the Conduit, destroying communication channels and tasks.
@@ -43,12 +43,20 @@ class Conduit:
             The conduit object
         """
         ...
-    def connect(self):
+    def connect(self, max_cache_size: int):
         """Start the Conduit, creating the communication channels and async tasks.
 
         This spawns the async tasks to the runtime and starts the process of receiving data
         from the GET data acquisition and listening on the included server. This should
         almost always be run when starting your application.
+
+        Parameters
+        ----------
+        max_cache_size: int
+            The maximum size the event cache is allowed to reach (in GRAW frames)
+            before events are emitted. Each Event can be populated by at most one frame
+            per AsAd. This means that for the AT-TPC, which has 44 AsAds, the max_cache_size
+            should be given in units of 44.
         """
         ...
     def disconnect(self):

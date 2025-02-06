@@ -93,7 +93,14 @@ pipeline = ConduitPipeline(
     help="The open port listening for connections to the Rerun Viewer",
     show_default=True,
 )
-def run_conduit(viewer_ip: str, viewer_port: int):
+@click.option(
+    "--event-cache-size",
+    default=440,
+    type=int,
+    help="The size of the event cache in the conduit in GRAW frames",
+    show_default=True,
+)
+def run_conduit(viewer_ip: str, viewer_port: int, event_cache_size: int):
     init_conduit_logger()  # initialize Rust logging
 
     logging.info("Connecting to rerun Viewer...")
@@ -118,7 +125,7 @@ def run_conduit(viewer_ip: str, viewer_port: int):
         conduit = Conduit(path)
 
     try:
-        conduit.connect()
+        conduit.connect(event_cache_size)
     except Exception as e:
         logging.error(f"Conduit failed to connect: {e}")
         return

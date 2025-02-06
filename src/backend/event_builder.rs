@@ -4,8 +4,6 @@ use fxhash::FxHashMap;
 use tokio::sync::{broadcast, mpsc};
 use tokio::task::JoinHandle;
 
-use crate::backend::constants::MAX_FRAME_CACHE;
-
 use super::error::{ConduitError, EventBuilderError};
 use super::event::Event;
 use super::graw_frame::GrawFrame;
@@ -96,6 +94,7 @@ pub struct EventBuilder {
     frame_receiver: mpsc::Receiver<GrawFrame>,
     event_sender: mpsc::Sender<Event>,
     event_cache: EventCache,
+    max_cache_size: usize,
 }
 
 impl EventBuilder {
@@ -104,6 +103,7 @@ impl EventBuilder {
         pad_map: PadMap,
         frame_rx: mpsc::Receiver<GrawFrame>,
         event_tx: mpsc::Sender<Event>,
+        max_cache_size: usize,
     ) -> Self {
         EventBuilder {
             current_event_id: 0,
@@ -111,6 +111,7 @@ impl EventBuilder {
             frame_receiver: frame_rx,
             event_sender: event_tx,
             event_cache: EventCache::new(),
+            max_cache_size,
         }
     }
 
@@ -139,7 +140,7 @@ impl EventBuilder {
     /// If the cache is full, an event is sent up to the conduit for exposure.
     async fn build(&mut self, frame: GrawFrame) -> Result<(), EventBuilderError> {
         self.event_cache.add_frame(&self.pad_map, frame)?;
-        if self.event_cache.size() > MAX_FRAME_CACHE {
+        if self.event_cache.size() > self.max_cache_size {
             self.event_sender
                 .send(self.event_cache.get_lru_event()?)
                 .await?
@@ -156,8 +157,9 @@ pub fn startup_event_builder(
     event_tx: mpsc::Sender<Event>,
     cancel: &broadcast::Sender<ConduitMessage>,
     pad_map: PadMap,
+    max_cache_size: usize,
 ) -> JoinHandle<Result<(), ConduitError>> {
-    let mut evb = EventBuilder::new(pad_map, frame_rx, event_tx);
+    let mut evb = EventBuilder::new(pad_map, frame_rx, event_tx, max_cache_size);
     let mut cancel_rx = cancel.subscribe();
     rt.spawn(async move {
         match evb.run(&mut cancel_rx).await {
