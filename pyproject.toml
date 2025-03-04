@@ -12,10 +12,10 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-	"cmap>=0.3.0",
-    "rerun-sdk>=0.21.0",
+    "cmap>=0.3.0",
+    "rerun-sdk>=0.22.1",
     "h5py>=3.10",
-    "attpc_spyral>=0.16.0",
+    "attpc_spyral>=0.18.0",
     "click>=8.0.0",
 ]
 
