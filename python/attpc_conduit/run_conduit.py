@@ -100,7 +100,16 @@ pipeline = ConduitPipeline(
     help="The size of the event cache in the conduit in GRAW frames",
     show_default=True,
 )
-def run_conduit(viewer_ip: str, viewer_port: int, event_cache_size: int):
+@click.option(
+    "--n-threads",
+    default=11,
+    type=int,
+    help="The number of threads given to the Conduit runtime",
+    show_default=True,
+)
+def run_conduit(
+    viewer_ip: str, viewer_port: int, event_cache_size: int, n_threads: int
+):
     init_conduit_logger()  # initialize Rust logging
 
     logging.info("Connecting to rerun Viewer...")
@@ -122,7 +131,7 @@ def run_conduit(viewer_ip: str, viewer_port: int, event_cache_size: int):
     logging.info("Setting up Conduit...")
     conduit: Conduit
     with PAD_ELEC_PATH as path:
-        conduit = Conduit(path)
+        conduit = Conduit(path, n_threads)
 
     try:
         conduit.connect(event_cache_size)

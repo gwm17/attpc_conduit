@@ -33,9 +33,9 @@ pub struct Conduit {
 impl Conduit {
     /// Create a new Conduit. Requires a path to a pad map.
     #[new]
-    pub fn new(pad_path: PathBuf) -> Self {
+    pub fn new(pad_path: PathBuf, n_threads: usize) -> Self {
         let rt = tokio::runtime::Builder::new_multi_thread()
-            .worker_threads(11)
+            .worker_threads(n_threads)
             .enable_time()
             .enable_io()
             .build()

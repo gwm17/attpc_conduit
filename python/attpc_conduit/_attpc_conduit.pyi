@@ -26,7 +26,7 @@ class Conduit:
         Check if the conduit is connected to the data streams
     """
 
-    def __init__(self, pad_path: Path):
+    def __init__(self, pad_path: Path, n_threads: int):
         """Create a new Conduit object
 
         This initializes the async runtime (tokio) and sets up some default pathing.
@@ -36,6 +36,10 @@ class Conduit:
         pad_path: Path
             The path to a file containing the mapping of AT-TPC electronics to pad
             number on the AT-TPC pad plane
+        n_threads: int
+            The number of concurrent threads given to the async runtime. Typically
+            somewhere between 1 - number of CoBos. 1 is an asynchronous but not parallel
+            runtime.
 
         Returns
         -------
