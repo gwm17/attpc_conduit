@@ -130,7 +130,7 @@ impl Conduit {
             Some(rx) => match rx.try_recv() {
                 Ok(event) => Some((
                     event.get_event_id(),
-                    event.convert_to_data_matrix().into_pyarray_bound(py),
+                    event.convert_to_data_matrix().into_pyarray(py),
                 )),
                 Err(_) => None,
             },
