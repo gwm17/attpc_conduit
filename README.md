@@ -41,7 +41,6 @@ the pyproject.toml.
 ## Use
 
 To run attpc_conduit you must have already started the following services:
-
 - The AT-TPC GETDAQ system, including the customized 
 [DataExporter](https://github.com/gwm17/DataExporter)
 - A [Rerun](https://rerun.io) viewer
@@ -58,6 +57,8 @@ The following options can be passed to run-conduit:
 
 - `--viewer-ip`: The IP address of the machine running the Rerun viewer
 - `--viewer-port`: The port number of the Rerun viewer
+- `--event-cache-size`: The size of the event building cache in GRAW frames
+- `--n-threads`: The number of threads given to the Conduit backend runtime
 
 This runs a the conduit with a default analysis pipeline. In general, however, you'll
 want to adjust analysis parameters or pipeline settings. Running the 
